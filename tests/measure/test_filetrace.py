@@ -278,7 +278,6 @@ def test_live_trace_names_a_file_opened_before_it_started(tmp_path):
         assert trace.flush()
         mine = [f for f in tracker.files.values() if f.pid == os.getpid() and f.writes == 50]
         assert mine, "the writes were not seen"
-        assert tracker.name_of(mine[0].file_id) is None  # no event names it
         trace.resolve_names()
     os.close(fd)
     assert tracker.name_of(mine[0].file_id) == str(tmp_path / "early.bin")
@@ -290,7 +289,7 @@ def test_live_trace_names_a_file_held_open_by_another_process(tmp_path):
     path = tmp_path / "service.log"
     code = ("import os,sys,time\n"
             "fd=os.open(sys.argv[1],os.O_RDWR|os.O_CREAT|os.O_BINARY)\n"
-            "print('open',flush=True)\n"
+            "print('open',os.getpid(),flush=True)\n"
             "sys.stdin.readline()\n"
             "[(os.lseek(fd,0,0),os.write(fd,b'x'*4096)) for _ in range(80)]\n"
             "print('written',flush=True)\n"
@@ -298,7 +297,11 @@ def test_live_trace_names_a_file_held_open_by_another_process(tmp_path):
     child = subprocess.Popen([sys.executable, "-c", code, str(path)], stdin=subprocess.PIPE,
                              stdout=subprocess.PIPE, text=True)
     try:
-        assert child.stdout.readline().strip() == "open"
+        # The pid is the child's own word: under a virtual environment the process
+        # that Popen started is a launcher, and the interpreter is its child.
+        word, writer = child.stdout.readline().split()
+        assert word == "open"
+        writer = int(writer)
         tracker = RewriteTracker()
         with ft.FileTrace(tracker, session="writehawk-test") as trace:
             time.sleep(0.5)
@@ -308,8 +311,8 @@ def test_live_trace_names_a_file_held_open_by_another_process(tmp_path):
             trace.resolve_names()  # straight after the writes: relies on flush
             seen = [(f.pid, f.writes, tracker.name_of(f.file_id), trace._unnamed.get(f.file_id))
                     for f in tracker.files.values() if f.writes >= 40]
-        theirs = [f for f in tracker.files.values() if f.pid == child.pid and f.writes == 80]
-        assert theirs, f"child {child.pid} not seen; files with 40+ writes: {seen}"
+        theirs = [f for f in tracker.files.values() if f.pid == writer and f.writes == 80]
+        assert theirs, f"writer {writer} not seen; files with 40+ writes: {seen}"
         assert tracker.name_of(theirs[0].file_id) == str(path), seen
         assert theirs[0].rewrite_ratio == 80.0
     finally:

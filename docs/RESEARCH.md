@@ -190,6 +190,11 @@ user, so the lookup needs elevation; files written by the Registry and System
 processes through kernel handles (hives among them) and files of processes
 that had exited stayed unnamed.
 
+On one Windows Server machine a file opened before the session was already
+named correctly by the trace's own events, before any handle lookup. Why that
+build names it is not known; the lookup stays, since desktop builds 26100 and
+26300 do not.
+
 **Events can arrive late.** Buffers are per processor. With the default
 settings, 80 writes by a second process were not delivered within 2.5 seconds
 and appeared only when the session stopped, while writes by the tracing
