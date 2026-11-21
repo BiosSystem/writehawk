@@ -93,6 +93,13 @@ class RewriteTracker:
     def name_of(self, file_id: int) -> str | None:
         return self.names.get(file_id)
 
+    def forget(self, file_id: int) -> None:
+        """Drop every total of one file, as if it had never been written."""
+        for key in [key for key in self.files if key[1] == file_id]:
+            del self.files[key]
+        self.flushed.pop(file_id, None)
+        self.names.pop(file_id, None)
+
     def top(self, limit: int = 20, min_bytes: int = 0) -> list[FileWrites]:
         rows = [f for f in self.files.values() if f.bytes_written >= min_bytes]
         rows.sort(key=lambda f: f.bytes_written, reverse=True)

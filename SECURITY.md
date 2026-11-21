@@ -44,6 +44,9 @@ Everything is read-only except `fix --apply` and `rollback --apply`:
 - `writehawk watch install` registers one scheduled task that runs
   `writehawk report` as SYSTEM and writes `%ProgramData%\writehawk\report.json`.
   The task changes nothing else. `writehawk watch remove` deletes it.
+- When the trace starts, it writes one byte to a file of its own in a new
+  temp folder until it sees that write, which proves the session is live, and
+  then deletes the folder.
 - The trace is a Windows event session named `writehawk`. If the process is
   killed while it runs (for example the window is closed during an elevated
   scan), the session stays until the next run stops it or Windows restarts.

@@ -27,7 +27,10 @@ Payload layouts come from the provider manifest (versions 0 and 1 of each event)
 from __future__ import annotations
 
 import ctypes
+import os
+import shutil
 import struct
+import tempfile
 import threading
 import time
 import uuid
@@ -253,6 +256,7 @@ class FileTrace:
         self.events = 0
         self.errors = 0
         self.retries = 0
+        self.ready = False  # set by start() once a write of its own came through
         self._last_stamp = 0
         self._flush_mark = 0       # events stamped before this are what flush waits for
         self._late_arrival = 0.0   # when one of those last reached the callback
@@ -402,6 +406,44 @@ class FileTrace:
             raise
         self._thread = threading.Thread(target=self._pump, name="writehawk-etw", daemon=True)
         self._thread.start()
+        self.ready = self._wait_ready()
+
+    def _wait_ready(self, timeout: float = 3.0) -> bool:
+        """Return once the session delivers events, proven with a write of our own.
+
+        Enabling the provider takes effect a moment after the call returns. Seen
+        on Windows Server: writes made at once were missed. The marker file is
+        written in a new temp folder, dropped from the totals and deleted.
+        """
+        folder = tempfile.mkdtemp(prefix="writehawk-ready-")
+        path = os.path.join(folder, "marker")
+        wanted = os.path.normcase(path)
+        mine = os.getpid()
+        deadline = time.monotonic() + timeout
+        seen: list[int] = []
+        try:
+            while not seen and time.monotonic() < deadline:
+                # A fresh open each round, so a create event names the file even
+                # when the first ones were missed.
+                fd = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_BINARY)
+                try:
+                    os.write(fd, b"r")
+                finally:
+                    os.close(fd)
+                self.flush(timeout=0.5, quiet=0.05)
+                with self.lock:
+                    seen = [f.file_id for f in self.tracker.files.values()
+                            if f.pid == mine and os.path.normcase(
+                                self.tracker.name_of(f.file_id) or "") == wanted]
+        finally:
+            with self.lock:
+                for file_id in {f.file_id for f in self.tracker.files.values()
+                                if os.path.normcase(self.tracker.name_of(f.file_id) or "")
+                                == wanted}:
+                    self.tracker.forget(file_id)
+                    self.name_sources.pop(file_id, None)
+            shutil.rmtree(folder, ignore_errors=True)
+        return bool(seen)
 
     def _pump(self) -> None:
         self._lib.ProcessTrace(ctypes.byref(self._trace_handle), 1, None, None)
