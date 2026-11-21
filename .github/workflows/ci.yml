@@ -15,18 +15,26 @@ permissions:
 
 jobs:
   test:
-    name: Python ${{ matrix.python }}
-    runs-on: windows-latest
+    name: ${{ matrix.os }}, Python ${{ matrix.python }}
+    runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
+        os: [windows-latest]
         python: ['3.11', '3.12', '3.13', '3.14']
+        include:
+          # An older Windows 10 era kernel, to catch what only newer builds allow.
+          - os: windows-2022
+            python: '3.12'
     steps:
       - uses: actions/checkout@v4
 
       - uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python }}
+
+      - name: Windows build
+        run: cmd /c ver
 
       - name: Install into a venv
         run: |
