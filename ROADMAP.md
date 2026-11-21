@@ -80,6 +80,9 @@ State: in progress. Commands are done; the Windows 10 run and the release are no
       Windows 10 as well, so it is a supported target, not an optional one.
       Closest so far: the suite passes elevated on Windows Server 2022
       (build 20348), including the live trace tests
+- [x] `writehawk selftest` and a test report form, so anyone can check a
+      Windows version or card we cannot reach
+- [ ] A real-hardware run of `tools/verify/Test-NvidiaRule.ps1`
 - [ ] First tagged release
 - Not planned for the first release: the scheduled task applying pre-approved
   rules

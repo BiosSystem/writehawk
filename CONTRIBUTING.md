@@ -51,6 +51,16 @@ next standard-user run fails with "Access is denied":
 python -m pytest -rs -p no:cacheprovider --basetemp <a folder you can delete>
 ```
 
+## Checking a rule against the real bug
+
+The sandbox has no NVIDIA or AMD hardware. `tools\verify\Test-NvidiaRule.ps1`
+runs on a machine that has an affected NVIDIA driver with the workaround in
+place: it switches the workaround off for a few minutes, scans, applies the
+workaround with `fix --apply --now`, rolls it back and applies it again, and
+ends by comparing the registry key with a backup taken first, restoring it if
+it differs. Run it with `-DryRun` first to see every step. Results go to
+`tools\verify\results`; add what they show to `docs/RESEARCH.md`.
+
 ## Workflow
 
 1. Open an issue that states why, the scope and how it will be accepted.

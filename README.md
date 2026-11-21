@@ -90,6 +90,7 @@ writehawk rollback              # undo the newest change from its record
 writehawk status                # changes this tool made and whether they still hold
 writehawk report --out r.json   # everything above as JSON, for a bug report or a script
 writehawk watch install         # scheduled task that writes the report every few hours
+writehawk selftest              # check that each part works on this PC
 writehawk probe --dir <folder>  # what rewrite and append workloads cost on this machine
 ```
 
@@ -146,13 +147,17 @@ rights.
 
 Early. Be aware of the limits:
 
-- The suite passes on Windows 11 and on Windows Server 2022, whose core is
-  from the Windows 10 line. A Windows 10 desktop itself has not been run yet,
-  although both known causes occur there.
+- The suite passes on Windows 11 and on Windows Server 2022 and 2025. Server
+  2022 shares its core with Windows 10, but a Windows 10 PC has not run it yet.
+  On Windows 10? Run `python -m writehawk selftest` and
+  [share the result](https://github.com/BiosSystem/writehawk/issues/new?template=test-report.yml).
 - The two rules were checked against a replay of their write pattern, not
   against the real bugs, which cannot be produced on demand.
+  `tools\verify\Test-NvidiaRule.ps1` checks the NVIDIA rule against the real
+  bug on a PC that has it; it has not had its first run yet.
 - Applying and undoing a workaround was verified on a scratch registry key and
-  a scratch service in a disposable machine, not on a vendor's own service.
+  a scratch service in a disposable machine. The same script covers the real
+  NVIDIA service.
 
 [ROADMAP.md](ROADMAP.md) tracks all of it. Reports from affected machines are
 the most useful contribution: attach the output of `writehawk report`.

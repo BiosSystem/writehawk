@@ -96,7 +96,8 @@ try {
         "for %w in (`"$scratch\dist\*.whl`") do `"$venv\Scripts\python.exe`" -m pip install --no-index --no-deps `"%w`"",
         "`"$venv\Scripts\writehawk.exe`" --version",
         "`"$venv\Scripts\writehawk.exe`" scan --seconds 5",
-        "`"$venv\Scripts\writehawk.exe`" status"
+        "`"$venv\Scripts\writehawk.exe`" status",
+        "`"$venv\Scripts\writehawk.exe`" selftest"
     )
     Set-Content -LiteralPath $installLog -Value '' -Encoding ASCII
     $summary.InstallExit = 0

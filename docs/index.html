@@ -378,6 +378,7 @@ amd-eeu-dump-files: <span class="calm">NOT APPLICABLE</span>
         <div class="note"><h3>Does it cost anything?</h3><p>No. It is free and open source. Anyone can read the code.</p></div>
         <div class="note"><h3>How do I remove it?</h3><p>Type <code>python -m pip uninstall writehawk</code> in the Terminal. The check itself leaves nothing behind.</p></div>
         <div class="note"><h3>I do not have NVIDIA or AMD</h3><p>Then the two known problems cannot affect you, and the check will say so.</p></div>
+        <div class="note"><h3>Can I help?</h3><p>Yes, especially on Windows 10. Type <code>python -m writehawk selftest</code>, then <a href="https://github.com/BiosSystem/writehawk/issues/new?template=test-report.yml">share what it prints</a>. It names your Windows version and nothing about you.</p></div>
       </div>
     </section>
   </div>
@@ -425,7 +426,8 @@ writehawk fix &lt;rule&gt;            <span class="dim"># show what a workaround
 writehawk rollback              <span class="dim"># undo the newest change from its record</span>
 writehawk status                <span class="dim"># changes this tool made and whether they still hold</span>
 writehawk report --out r.json   <span class="dim"># everything as JSON, for a bug report or a script</span>
-writehawk watch install         <span class="dim"># scheduled task that writes the report</span></pre></div>
+writehawk watch install         <span class="dim"># scheduled task that writes the report</span>
+writehawk selftest              <span class="dim"># check that each part works on this PC</span></pre></div>
     </section>
 
     <section>
@@ -480,13 +482,27 @@ writehawk rollback --apply                          <span class="dim"># puts eve
   </section>
 
   <section id="limits">
-    <h2>Honest limits</h2>
-    <ul class="plain">
-      <li>It is early software. The tests pass on Windows 11 and on Windows Server 2022 and 2025; Server 2022 shares its core with Windows 10. A Windows 10 desktop has not been run yet.</li>
-      <li>The two known problems were checked against a replay of their write pattern, because the real bugs cannot be produced on demand.</li>
-      <li>Applying and undoing a workaround was verified on a test key and service in a throwaway Windows, not on a vendor's own service.</li>
-    </ul>
-    <p style="margin-top:16px">Everything that was and was not verified is written down in the <a href="https://github.com/BiosSystem/writehawk/blob/master/docs/RESEARCH.md">research notes</a>.</p>
+    <h2>Honest limits, and how they get closed</h2>
+    <p class="muted">Three things are not proven yet. Each one has a way to close it.</p>
+    <div class="grid3">
+      <div class="card">
+        <span class="num">OPEN &middot; NEEDS YOU</span>
+        <h3>A Windows 10 PC</h3>
+        <p>The tests pass on Windows 11 and on Windows Server 2022 and 2025. Server 2022 shares its core with Windows 10, but a Windows 10 PC has not run it yet.</p>
+        <p style="margin-top:10px">On Windows 10? Run <code>python -m writehawk selftest</code> and <a href="https://github.com/BiosSystem/writehawk/issues/new?template=test-report.yml">share the result</a>. It takes a minute and names nothing about you.</p>
+      </div>
+      <div class="card">
+        <span class="num">OPEN &middot; CHECK READY</span>
+        <h3>The real bugs</h3>
+        <p>The two known problems were checked against a replay of their write pattern, because the real bugs cannot be started on demand. A check against the real NVIDIA bug, for a PC that has it, is written and waiting for its first run.</p>
+      </div>
+      <div class="card">
+        <span class="num">OPEN &middot; CHECK READY</span>
+        <h3>A vendor's own service</h3>
+        <p>Applying and undoing a workaround is proven byte for byte on a test key and service in a throwaway Windows. The same NVIDIA check covers the real vendor service.</p>
+      </div>
+    </div>
+    <p style="margin-top:18px">Every result, passed or not, is written down in the <a href="https://github.com/BiosSystem/writehawk/blob/master/docs/RESEARCH.md">research notes</a>.</p>
   </section>
 </div>
 

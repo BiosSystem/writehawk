@@ -35,6 +35,11 @@ Versions follow [Semantic Versioning](https://semver.org/).
 - `writehawk report`: scan and context as JSON. `writehawk watch`: a scheduled task
   that writes the report and changes nothing.
 - MIT license.
+- `writehawk selftest`: checks each part of the tool on the machine it runs
+  on and prints pass, fail or skipped with the Windows build, for sharing
+  through a test report form.
+- `tools/verify/Test-NvidiaRule.ps1`: checks the NVIDIA rule against the real
+  bug on a machine that has it.
 - The AMD rule reports 26.11.2 as the fixed version. 26.11.1 fixed RX 7000
   and newer only, so an RX 5000 or 6000 card on 26.11.1 was wrongly shown as
   fixed.

@@ -7,7 +7,7 @@ import os
 import time
 from collections.abc import Callable, Iterable, Sequence
 
-from . import __version__, report
+from . import __version__, report, selftest
 from .act import apply as act
 from .act import commands, ledger, watch
 from .context import drivers, gpu, protect, session, storage
@@ -323,6 +323,16 @@ def _status(args: argparse.Namespace) -> int:
     return 0
 
 
+def _selftest(_args: argparse.Namespace) -> int:
+    shown = Progress()
+    shown.step("Checking each part of writehawk on this machine")
+    results = selftest.run_checks(selftest.CHECKS)
+    shown.done()
+    print(selftest.format_results(selftest.describe_system(), results))
+    print("Share this output: https://github.com/BiosSystem/writehawk/issues/new?template=test-report.yml")
+    return 1 if any(r.status == selftest.FAIL for r in results) else 0
+
+
 def _probe(args: argparse.Namespace) -> int:
     return probe.run(args.dir)
 
@@ -397,6 +407,10 @@ def build_parser() -> argparse.ArgumentParser:
     status = commands.add_parser("status", help="changes this tool has made and their state")
     with_ledger(status)
     status.set_defaults(run=_status)
+
+    check = commands.add_parser(
+        "selftest", help="check that each part of writehawk works on this machine")
+    check.set_defaults(run=_selftest)
 
     probe_cmd = commands.add_parser(
         "probe", help="compare what rewrite and append workloads cost on this machine")
