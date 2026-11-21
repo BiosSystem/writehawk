@@ -23,20 +23,34 @@ python -m writehawk scan
 New to the command line? The [project page](https://biossystem.github.io/writehawk/)
 has a step by step guide with pictures.
 
-`scan` needs no administrator rights. It answers four questions for every
-cause it knows:
+`scan` needs no administrator rights. While it watches it shows a bar with
+the seconds left, then answers four questions for every cause it knows and
+ends with a one-line summary:
 
 ```
+> writehawk scan
+Looking at the graphics cards ... 1 found
+Watching for disk writes  ████████████████████████  done
+Checking 2 known problems ... done
+
 nvidia-nvtopps-log-rewrite: EXPOSED
   NVIDIA display container rewrites its log file without pause
   Example GeForce card: driver 621.24 (affected from 621.14, fixed in 621.35)
-  workaround: available, not documented by the vendor. Stops the container
-  from loading the plugin that writes the log.
+  note: 621.35 is a hotfix driver based on 621.24, for Windows 10 and 11.
+  workaround: available, not documented by the vendor. Stops the container from loading the plugin that writes the log. NVIDIA does not document this value. It was seen to stop the writes on one affected machine.
   why the fix may not have reached this machine:
-    - The fix is a hotfix driver. It has to be downloaded and installed by hand.
+    - The fix is a hotfix driver. NVIDIA publishes hotfix drivers as a separate download from its support site and folds them into the next regular driver; no report shows the NVIDIA app or Windows Update offering this one. It has to be downloaded and installed by hand.
+  source: https://www.nvidia.com/en-us/geforce/forums/game-ready-drivers/13/592907/continuous-writing-of-gigabytes-to-ssd-to-nvtopps-/
+  source: https://wccftech.com/nvidia-releases-gpu-hotfix-driver-621-35-fixes-excessive-ssd-writes/
+  source: https://nvidia.custhelp.com/app/answers/detail/a_id/5940
 
 amd-eeu-dump-files: NOT APPLICABLE
+  AMD External Events Utility writes dump files while idle
   no amd display adapter in this machine
+
+unknown rewrite loops: not checked, the file trace needs an elevated terminal
+
+Summary: your graphics driver has 1 known problem. Update it to the version named above.
 ```
 
 | Status | Meaning |

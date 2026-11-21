@@ -15,6 +15,7 @@ from .measure import probe
 from .measure.filetrace import FileTrace, is_elevated
 from .measure.rewrite import RewriteTracker
 from .measure.sampler import ProcRate, Sampler, list_processes
+from .progress import Progress
 from .rules import catalog, explain
 from .rules import evaluate as ev
 
@@ -32,7 +33,7 @@ def format_top(rates: list[ProcRate], limit: int) -> str:
 def _top(args: argparse.Namespace) -> int:
     sampler = Sampler()
     sampler.sample()
-    time.sleep(args.seconds)
+    Progress().wait(args.seconds, "Measuring write rates")
     sampler.sample()
     print(format_top(sampler.rates(args.seconds + 1), args.limit))
     if sampler.unreadable:
@@ -59,9 +60,12 @@ def _trace(args: argparse.Namespace) -> int:
     tracker = RewriteTracker()
     min_bytes = args.min_kb * 1024
     names = dict(list_processes())
+    shown = Progress()
     with FileTrace(tracker) as trace:
-        time.sleep(args.seconds)
+        shown.wait(args.seconds, "Tracing every file write")
+        shown.step("Naming the files that were written")
         named = trace.resolve_names(min_bytes)
+        shown.done()
     names.update(list_processes())  # keeps the names of processes that exited meanwhile
     print(format_files(tracker, names, args.limit, min_bytes))
     shown = tracker.top(args.limit, min_bytes)
@@ -166,6 +170,26 @@ def _finding_lines(finding: ev.Finding, delivery: drivers.DriverDelivery) -> lis
     return lines
 
 
+def scan_summary(findings: list[ev.Finding]) -> str:
+    """One plain sentence for someone who reads nothing else."""
+    def count(status: str) -> int:
+        return sum(1 for finding in findings if finding.status == status)
+
+    def plural(n: int) -> str:
+        return "1 known problem" if n == 1 else f"{n} known problems"
+
+    if count(ev.ACTIVE):
+        return (f"Summary: {plural(count(ev.ACTIVE))} writing to your drive right now. "
+                "Update the graphics driver named above.")
+    if count(ev.EXPOSED):
+        return (f"Summary: your graphics driver has {plural(count(ev.EXPOSED))}. "
+                "Update it to the version named above.")
+    if count(ev.UNKNOWN_VERSION):
+        return ("Summary: the graphics driver version could not be read, so this cannot be "
+                "told. Updating the driver is the safe choice.")
+    return "Summary: nothing needs your attention."
+
+
 def format_scan(findings: list[ev.Finding], loops: list[ev.Activity] | None,
                 delivery: drivers.DriverDelivery) -> str:
     lines = []
@@ -181,11 +205,12 @@ def format_scan(findings: list[ev.Finding], loops: list[ev.Activity] | None,
         lines.append("unknown rewrite loops (reported only, no rule explains them)")
         lines.extend(f"  {loop.path}: {loop.bytes_written / (1 << 20):.1f} MB, rewritten "
                      f"{loop.rewrite_ratio:.0f}x" for loop in loops)
+    lines.extend(["", scan_summary(findings)])
     return "\n".join(lines)
 
 
-def _collect(seconds: float, adapters: list[gpu.Gpu]) -> tuple[list[ev.Finding],
-                                                                list[ev.Activity] | None]:
+def _collect(seconds: float, adapters: list[gpu.Gpu],
+             shown: Progress) -> tuple[list[ev.Finding], list[ev.Activity] | None]:
     """Watch for `seconds`, then evaluate every rule. Loops are None without the trace."""
     rules = catalog.load()
     before = {rule.id: ev.snapshot_files(rule) for rule in rules}
@@ -193,10 +218,13 @@ def _collect(seconds: float, adapters: list[gpu.Gpu]) -> tuple[list[ev.Finding],
     if is_elevated():
         tracker = RewriteTracker()
         with FileTrace(tracker) as trace:
-            time.sleep(seconds)
+            shown.wait(seconds, "Watching every file write")
+            shown.step("Naming the files that were written")
             trace.resolve_names(ev.TRACE_MIN_BYTES)
+            shown.done()
     else:
-        time.sleep(seconds)
+        shown.wait(seconds, "Watching for disk writes")
+    shown.step(f"Checking {len(rules)} known problems")
     findings = []
     for rule in rules:
         seen = ev.trace_activity(rule, tracker) if tracker else []
@@ -204,18 +232,32 @@ def _collect(seconds: float, adapters: list[gpu.Gpu]) -> tuple[list[ev.Finding],
         seen += [item for item in ev.file_activity(before[rule.id], ev.snapshot_files(rule))
                  if os.path.normcase(item.path) not in traced]
         findings.append(ev.evaluate(rule, adapters, ev.read_dword, seen))
-    return findings, ev.rewrite_loops(tracker, rules) if tracker else None
+    loops = ev.rewrite_loops(tracker, rules) if tracker else None
+    shown.done()
+    return findings, loops
+
+
+def _adapters(shown: Progress) -> list[gpu.Gpu]:
+    shown.step("Looking at the graphics cards")
+    found = gpu.gpus()
+    shown.done(f"{len(found)} found")
+    return found
 
 
 def _scan(args: argparse.Namespace) -> int:
-    findings, loops = _collect(args.seconds, gpu.gpus())
-    print(format_scan(findings, loops, drivers.read()))
+    shown = Progress()
+    findings, loops = _collect(args.seconds, _adapters(shown), shown)
+    delivery = drivers.read()
+    if shown.enabled:
+        print(file=shown.stream)
+    print(format_scan(findings, loops, delivery))
     return 1 if any(f.status in (ev.ACTIVE, ev.EXPOSED) for f in findings) else 0
 
 
 def _report(args: argparse.Namespace) -> int:
-    adapters = gpu.gpus()
-    findings, loops = _collect(args.seconds, adapters)
+    shown = Progress()
+    adapters = _adapters(shown)
+    findings, loops = _collect(args.seconds, adapters, shown)
     document = report.build(
         elevated=is_elevated(), seconds=args.seconds, gpus=adapters,
         volumes=storage.volumes(), session=session.read(),

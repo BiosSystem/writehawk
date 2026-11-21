@@ -169,3 +169,27 @@ def test_live_report_prints_when_no_file_is_given(tmp_path, capsys):
 def test_watch_status_reads_only(capsys):
     assert cli.main(["watch", "status"]) == 0
     assert "scheduled report is" in capsys.readouterr().out
+
+
+def test_scan_summary_says_what_to_do_in_one_sentence():
+    rules = {rule.id: rule for rule in catalog.load()}
+    nvidia = rules["nvidia-nvtopps-log-rewrite"]
+    seen = [ev.Activity("C:\\x\\nvlog.nvlgstg", "trace", 2 << 20, 512.0)]
+    active = ev.evaluate(nvidia, [_card("nvidia", "621.24", 2)], lambda *_: None, seen)
+    exposed = ev.evaluate(nvidia, [_card("nvidia", "621.24", 2)], lambda *_: None)
+    unknown = ev.evaluate(nvidia, [_card("nvidia", "", 2)], lambda *_: None)
+    fixed = ev.evaluate(nvidia, [_card("nvidia", "621.35", 2)], lambda *_: None)
+    assert "1 known problem writing to your drive right now" in cli.scan_summary([active, fixed])
+    assert "has 1 known problem" in cli.scan_summary([exposed])
+    assert "could not be read" in cli.scan_summary([unknown])
+    assert cli.scan_summary([fixed]) == "Summary: nothing needs your attention."
+    assert cli.scan_summary([]) == "Summary: nothing needs your attention."
+    text = cli.format_scan([exposed], None, DriverDelivery({}, False, "", None))
+    assert text.splitlines()[-1].startswith("Summary: your graphics driver has")
+
+
+def test_live_scan_prints_no_progress_when_output_is_captured(capsys):
+    assert cli.main(["scan", "--seconds", "0.2"]) in (0, 1)
+    captured = capsys.readouterr()
+    assert captured.err == ""
+    assert captured.out.strip().splitlines()[-1].startswith("Summary: ")

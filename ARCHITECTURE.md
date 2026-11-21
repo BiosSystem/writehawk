@@ -255,6 +255,14 @@ Process throttling is not built. The job object rate limit is documented as
 unsupported and does not slow a buffered writer (see `docs/RESEARCH.md`), so
 there is no case yet where it helps.
 
+## Progress
+
+A command that watches for a while shows what it is doing on standard error:
+named steps and a bar with the seconds left. It does so only when standard
+error is a terminal. A scheduled task, a pipe or a test that captures output
+gets nothing extra, and standard output carries only the result, so `report`
+stays valid JSON when redirected.
+
 ## Report and schedule
 
 `report.py` turns one scan into a JSON document with a format number. It is
@@ -391,6 +399,7 @@ src/writehawk/
     evaluate.py        status of a rule on this machine; unexplained rewrite loops
     explain.py         why a published fix may not have arrived
   report.py          scan and context as one JSON document
+  progress.py        steps and a countdown bar while a command watches
   act/               the only package that changes the system
     regvalues.py       registry values: read with type, set, put back
     services.py        service start type and state

@@ -127,6 +127,7 @@
     font: 13.5px/1.6 ui-monospace, "Cascadia Code", Consolas, monospace; overflow-x: auto; margin: 18px 0 0;
   }
   .term pre { margin: 0; }
+  .term.wrapped pre { white-space: pre-wrap; overflow-wrap: anywhere; }
   .dim { color: var(--term-dim); } .hot { color: #ff8a4c; font-weight: 600; } .calm { color: #6fcf97; font-weight: 600; }
   .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 16px; margin-top: 22px; }
   .card { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 20px; }
@@ -238,12 +239,15 @@
         </li>
         <li>
           <h3>Run the check</h3>
-          <p>Type this and press <kbd>Enter</kbd>, then wait about 20 seconds:</p>
+          <p>Type this and press <kbd>Enter</kbd>:</p>
           <div class="type"><span>python -m writehawk scan</span><button type="button">copy</button></div>
+          <p>A bar fills up while it watches your PC, and counts down the seconds. It takes about 20 seconds. Leave the window open until it says <b>done</b>.</p>
+          <div class="type" aria-hidden="true"><span>Watching for disk writes  ████████████░░░░░░░░░░░░   10 s left</span></div>
         </li>
         <li>
           <h3>Read the answer</h3>
-          <p>You will see a few lines for each known problem. Look for the word in CAPITAL LETTERS at the end of the first line, and find it in the list below.</p>
+          <p>The very last line starts with <b>Summary</b> and tells you in one sentence whether anything needs doing. If it says <b>nothing needs your attention</b>, you are done.</p>
+          <p>Want the details? Above the summary there is a short block for each known problem. The word in CAPITAL LETTERS at the end of its first line is explained in the list below.</p>
         </li>
       </ol>
     </section>
@@ -311,18 +315,31 @@
         <li>Read-only unless you pass <code>--apply</code></li>
       </ul>
       <p class="muted" style="margin-top:22px"><code>writehawk scan</code> needs no administrator rights. For every cause it knows, it says whether you have the hardware, whether your driver has the fix, and whether the writes are happening now.</p>
-      <div class="term"><pre><span class="dim">&gt;</span> writehawk scan
+      <div class="term wrapped"><pre><span class="dim">&gt;</span> writehawk scan
+<span class="dim">Looking at the graphics cards ... 1 found
+Watching for disk writes  ████████████████████████  done
+Checking 2 known problems ... done</span>
 
 nvidia-nvtopps-log-rewrite: <span class="hot">EXPOSED</span>
   NVIDIA display container rewrites its log file without pause
   Example GeForce card: driver 621.24 (affected from 621.14, fixed in 621.35)
-  workaround: available, not documented by the vendor
+  note: 621.35 is a hotfix driver based on 621.24, for Windows 10 and 11.
+  workaround: available, not documented by the vendor. Stops the container from loading the plugin that writes the log. NVIDIA does not document this value. It was seen to stop the writes on one affected machine.
   why the fix may not have reached this machine:
-    - The fix is a hotfix driver. It has to be downloaded and installed by hand.
+    - The fix is a hotfix driver. NVIDIA publishes hotfix drivers as a separate download from its support site and folds them into the next regular driver; no report shows the NVIDIA app or Windows Update offering this one. It has to be downloaded and installed by hand.
+  source: https://www.nvidia.com/en-us/geforce/forums/game-ready-drivers/13/592907/continuous-writing-of-gigabytes-to-ssd-to-nvtopps-/
+  source: https://wccftech.com/nvidia-releases-gpu-hotfix-driver-621-35-fixes-excessive-ssd-writes/
+  source: https://nvidia.custhelp.com/app/answers/detail/a_id/5940
 
 amd-eeu-dump-files: <span class="calm">NOT APPLICABLE</span>
-  no amd display adapter in this machine</pre></div>
-      <p class="muted" style="margin-top:16px">From an administrator terminal the scan also traces file writes for its duration, measures the loop, and lists rewrite loops that no known cause explains.</p>
+  AMD External Events Utility writes dump files while idle
+  no amd display adapter in this machine
+
+unknown rewrite loops: not checked, the file trace needs an elevated terminal
+
+Summary: your graphics driver has 1 known problem. Update it to the version named above.</pre></div>
+      <p class="muted" style="margin-top:16px">If the <code>writehawk</code> command is not found, Python's scripts folder is not on your PATH; <code>python -m writehawk</code> works the same everywhere. The steps and the bar go to standard error and only to a terminal, so <code>report</code> output stays clean for scripts.</p>
+      <p class="muted">From an administrator terminal the scan also traces file writes for its duration, measures the loop, and lists rewrite loops that no known cause explains.</p>
     </section>
 
     <section>
