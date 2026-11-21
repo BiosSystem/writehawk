@@ -4,7 +4,20 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>writehawk: find what is wearing out your SSD</title>
-<meta name="description" content="writehawk finds Windows programs that rewrite the same file in a loop, tells you whether a known driver bug applies to your machine, and can apply and undo a workaround. With an easy step-by-step guide.">
+<meta name="description" content="A free 20-second check that tells you whether a known driver bug is quietly wearing out your SSD, and what to do about it. For Windows 10 and 11, with an easy step-by-step guide.">
+<meta name="theme-color" content="#b4410e">
+<link rel="canonical" href="https://biossystem.github.io/writehawk/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="writehawk">
+<meta property="og:title" content="writehawk: find the program that is quietly wearing out your SSD">
+<meta property="og:description" content="A free 20-second check for Windows 10 and 11. Finds known driver bugs that rewrite the same file all day, and tells you how to fix them.">
+<meta property="og:url" content="https://biossystem.github.io/writehawk/">
+<meta property="og:image" content="https://biossystem.github.io/writehawk/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="writehawk: a check that finds programs wearing out your SSD">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23b4410e'/%3E%3Cpath d='M6 11l4 11 4-8 4 8 4-11' fill='none' stroke='%23fff' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'/%3E%3Ccircle cx='25.5' cy='9.5' r='2.5' fill='%23fff'/%3E%3C/svg%3E">
 <style>
   :root {
     --bg: #f6f4ef; --surface: #ffffff; --ink: #17181c; --muted: #5d6068;
@@ -12,6 +25,7 @@
     --term-bg: #15171c; --term-ink: #d9dbe1; --term-dim: #8a8e99;
     --ok: #2f7d4f; --ok-soft: #e1f1e7; --warn: #a8640a; --warn-soft: #f8ecd3;
     --bad: #b3261e; --bad-soft: #f9e0de; --paper: #fffdf7; --pen: #3b5fb0;
+    --header: rgba(246, 244, 239, 0.88);
   }
   @media (prefers-color-scheme: dark) {
     :root {
@@ -20,52 +34,90 @@
       --term-bg: #0b0c0f; --term-ink: #d9dbe1; --term-dim: #7d818c;
       --ok: #6fcf97; --ok-soft: #16261d; --warn: #f2c46d; --warn-soft: #2a2314;
       --bad: #ff8a80; --bad-soft: #2c1716; --paper: #23252d; --pen: #8ab4f8;
+      --header: rgba(17, 18, 22, 0.88);
     }
   }
   * { box-sizing: border-box; }
-  html { -webkit-text-size-adjust: 100%; scroll-behavior: smooth; }
-  body {
-    margin: 0; background: var(--bg); color: var(--ink);
-    font: 17px/1.6 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-  }
-  .wrap { max-width: 980px; margin: 0 auto; padding: 0 20px; }
-  header { padding: 22px 0; display: flex; justify-content: space-between; align-items: center; }
-  .brand { font: 700 20px/1 ui-monospace, "Cascadia Code", Consolas, monospace; letter-spacing: -0.02em; }
-  .brand span { color: var(--accent); }
-  nav a { color: var(--muted); text-decoration: none; margin-left: 20px; font-size: 15px; }
-  nav a:hover { color: var(--ink); }
-  .hero { padding: 40px 0 26px; }
-  h1 { font-size: clamp(34px, 6vw, 56px); line-height: 1.05; letter-spacing: -0.03em; margin: 0 0 18px; text-wrap: balance; }
-  .lede { font-size: clamp(18px, 2.4vw, 21px); color: var(--muted); max-width: 44em; margin: 0; }
+  html { -webkit-text-size-adjust: 100%; scroll-behavior: smooth; scroll-padding-top: 70px; }
+  @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+  body { margin: 0; background: var(--bg); color: var(--ink); font: 17px/1.6 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+  .wrap { max-width: 1040px; margin: 0 auto; padding: 0 20px; }
+  a { color: var(--accent); }
+  h1 { font-size: clamp(34px, 5.4vw, 54px); line-height: 1.05; letter-spacing: -0.03em; margin: 0 0 18px; text-wrap: balance; }
   h2 { font-size: clamp(24px, 3.4vw, 32px); letter-spacing: -0.02em; line-height: 1.15; margin: 0 0 14px; text-wrap: balance; }
   h3 { margin: 0 0 8px; font-size: 19px; }
   p { margin: 0 0 14px; max-width: 46em; }
   .muted { color: var(--muted); }
-  section { padding: 40px 0; border-top: 1px solid var(--line); }
-  a { color: var(--accent); }
+  section { padding: 44px 0; border-top: 1px solid var(--line); }
+  code { font: 0.92em ui-monospace, "Cascadia Code", Consolas, monospace; background: var(--surface); border: 1px solid var(--line); border-radius: 5px; padding: 1px 5px; }
+  kbd { font: 600 0.85em ui-monospace, Consolas, monospace; background: var(--bg); border: 1px solid var(--line); border-bottom-width: 3px; border-radius: 6px; padding: 1px 7px; white-space: nowrap; }
 
-  /* The two views. Radio buttons switch them, so it works without scripts. */
+  /* Header */
+  .top { position: sticky; top: 0; z-index: 5; background: var(--header); backdrop-filter: blur(8px); border-bottom: 1px solid var(--line); }
+  .top .wrap { display: flex; justify-content: space-between; align-items: center; height: 58px; gap: 12px; }
+  .brand { font: 700 20px/1 ui-monospace, "Cascadia Code", Consolas, monospace; letter-spacing: -0.02em; color: var(--ink); text-decoration: none; display: flex; align-items: center; gap: 9px; }
+  .brand span { color: var(--accent); }
+  .brand .word { font-weight: 700; }
+  .top nav { display: flex; gap: 18px; align-items: center; }
+  .top nav a { color: var(--muted); text-decoration: none; font-size: 15px; white-space: nowrap; }
+  .top nav a:hover { color: var(--ink); }
+  .top nav a.gh { color: var(--ink); border: 1px solid var(--line); border-radius: 8px; padding: 5px 11px; background: var(--surface); }
+  @media (max-width: 640px) { .top nav a.opt { display: none; } }
+
+  /* Hero */
+  .hero { display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr); gap: 40px; align-items: center; padding: 54px 0 34px; }
+  @media (max-width: 880px) { .hero { grid-template-columns: minmax(0, 1fr); gap: 28px; padding-top: 36px; } }
+  .eyebrow { display: inline-flex; flex-wrap: wrap; gap: 6px 14px; font-size: 14px; color: var(--muted); margin-bottom: 16px; }
+  .eyebrow b { color: var(--accent); font-weight: 600; }
+  .lede { font-size: clamp(18px, 2.3vw, 20px); color: var(--muted); margin: 0 0 26px; }
+  .cta { display: flex; flex-wrap: wrap; gap: 12px; }
+  .btn { display: inline-flex; flex-direction: column; justify-content: center; padding: 12px 20px; border-radius: 12px; font-weight: 650; text-decoration: none; line-height: 1.25; border: 1px solid transparent; }
+  .btn small { font-weight: 400; font-size: 13px; opacity: 0.85; }
+  .btn.primary { background: var(--accent); color: var(--accent-ink); }
+  .btn.ghost { background: var(--surface); color: var(--ink); border-color: var(--line); }
+  .btn:hover { filter: brightness(1.06); }
+  .reassure { font-size: 14px; color: var(--muted); margin: 14px 0 0; }
+
+  /* Terminal */
+  .term { background: var(--term-bg); color: var(--term-ink); border-radius: 14px; font: 13px/1.6 ui-monospace, "Cascadia Code", Consolas, monospace; overflow: hidden; box-shadow: 0 18px 50px -24px rgba(0,0,0,0.5); }
+  .term .bar-top { display: flex; gap: 7px; padding: 11px 14px; background: rgba(255,255,255,0.05); align-items: center; }
+  .term .bar-top i { width: 11px; height: 11px; border-radius: 50%; background: #3a3d47; display: block; }
+  .term .bar-top span { margin-left: 8px; color: var(--term-dim); font-size: 12px; }
+  .term pre { margin: 0; padding: 16px 18px 18px; white-space: pre-wrap; overflow-wrap: anywhere; }
+  .dim { color: var(--term-dim); } .hot { color: #ff8a4c; font-weight: 600; } .calm { color: #6fcf97; font-weight: 600; }
+  .term .term-note { display: block; padding: 0 18px 14px; color: var(--term-dim); font-size: 12px; font-family: system-ui, "Segoe UI", sans-serif; }
+  .meter { display: inline-block; width: 12.5em; height: 0.85em; vertical-align: -0.08em; background: #2a2d36; border-radius: 2px; overflow: hidden; }
+  .meter b { display: block; height: 100%; width: 100%; background: #d9dbe1; }
+  /* Without scripts every line shows at once. With them, lines appear in turn. */
+  .demo .later.wait { visibility: hidden; }
+  .demo .meter b.grow { transition: width 4.2s linear; }
+
+  .facts { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; margin: 6px 0 46px; }
+  @media (max-width: 760px) { .facts { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  .fact { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; }
+  .fact b { display: block; font-size: 22px; letter-spacing: -0.02em; }
+  .fact span { font-size: 14px; color: var(--muted); }
+
+  /* Cards and grids */
+  .grid3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; margin-top: 22px; }
+  .card { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 20px; }
+  .card p { margin: 0; color: var(--muted); font-size: 16px; }
+  .card .ico { width: 38px; height: 38px; margin-bottom: 12px; }
+  .num { font: 700 13px/1 ui-monospace, Consolas, monospace; color: var(--accent); display: block; margin-bottom: 10px; }
+
+  /* Guide switch */
   .pick { position: absolute; opacity: 0; pointer-events: none; }
-  .switch {
-    display: inline-flex; gap: 6px; padding: 6px; margin: 26px 0 0; border-radius: 14px;
-    background: var(--surface); border: 1px solid var(--line);
-  }
-  .switch label {
-    cursor: pointer; padding: 10px 18px; border-radius: 10px; font-weight: 600; color: var(--muted);
-    display: flex; flex-direction: column; line-height: 1.25; min-width: 132px;
-  }
+  .switch { display: inline-flex; gap: 6px; padding: 6px; margin: 6px 0 0; border-radius: 14px; background: var(--surface); border: 1px solid var(--line); }
+  .switch label { cursor: pointer; padding: 10px 18px; border-radius: 10px; font-weight: 600; color: var(--muted); display: flex; flex-direction: column; line-height: 1.25; min-width: 150px; }
   .switch label small { font-weight: 400; font-size: 13px; }
-  #easy:checked ~ .wrap .switch label[for="easy"],
-  #adv:checked ~ .wrap .switch label[for="adv"] { background: var(--accent); color: var(--accent-ink); }
-  #easy:focus-visible ~ .wrap .switch label[for="easy"],
-  #adv:focus-visible ~ .wrap .switch label[for="adv"] { outline: 3px solid var(--pen); outline-offset: 2px; }
-  #easy:checked ~ .wrap .view-adv, #adv:checked ~ .wrap .view-easy { display: none; }
+  #easy:checked ~ main .switch label[for="easy"], #adv:checked ~ main .switch label[for="adv"] { background: var(--accent); color: var(--accent-ink); }
+  #easy:focus-visible ~ main .switch label[for="easy"], #adv:focus-visible ~ main .switch label[for="adv"] { outline: 3px solid var(--pen); outline-offset: 2px; }
+  #easy:checked ~ main .view-adv, #adv:checked ~ main .view-easy { display: none; }
+  .guide-head { padding-bottom: 8px; }
+  .views section:first-child { border-top: 0; }
 
   /* Easy view */
-  .picture {
-    background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 18px; margin-top: 20px;
-    display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 18px;
-  }
+  .picture { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 18px; margin-top: 20px; display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 18px; }
   .picture figure { margin: 0; text-align: center; }
   .picture figcaption { font-weight: 700; font-size: 19px; margin-bottom: 6px; }
   .picture svg { width: 100%; max-width: 380px; height: auto; display: block; margin: 0 auto; }
@@ -75,33 +127,13 @@
   .note { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 18px; }
   .note p { margin: 0; color: var(--muted); font-size: 16px; }
   ol.steps { list-style: none; padding: 0; margin: 22px 0 0; counter-reset: step; display: grid; grid-template-columns: minmax(0, 1fr); gap: 14px; }
-  ol.steps > li {
-    counter-increment: step; position: relative; background: var(--surface); border: 1px solid var(--line);
-    border-radius: 14px; padding: 20px 20px 20px 78px; min-height: 84px;
-  }
-  ol.steps > li::before {
-    content: counter(step); position: absolute; left: 18px; top: 18px; width: 44px; height: 44px; border-radius: 50%;
-    background: var(--accent); color: var(--accent-ink); font-weight: 700; font-size: 20px;
-    display: flex; align-items: center; justify-content: center;
-  }
-  ol.steps p { margin: 0 0 8px; }
-  ol.steps p:last-child { margin-bottom: 0; }
+  ol.steps > li { counter-increment: step; position: relative; background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 20px 20px 20px 78px; min-height: 84px; }
+  ol.steps > li::before { content: counter(step); position: absolute; left: 18px; top: 18px; width: 44px; height: 44px; border-radius: 50%; background: var(--accent); color: var(--accent-ink); font-weight: 700; font-size: 20px; display: flex; align-items: center; justify-content: center; }
+  ol.steps p { margin: 0 0 8px; } ol.steps p:last-child { margin-bottom: 0; }
   .tip { font-size: 15px; color: var(--muted); }
-  kbd {
-    font: 600 0.85em ui-monospace, Consolas, monospace; background: var(--bg); border: 1px solid var(--line);
-    border-bottom-width: 3px; border-radius: 6px; padding: 1px 7px; white-space: nowrap;
-  }
-  .type {
-    display: flex; align-items: center; gap: 10px; background: var(--term-bg); color: var(--term-ink);
-    border-radius: 10px; padding: 11px 13px; margin: 8px 0; max-width: 100%;
-    font: 14px/1.4 ui-monospace, "Cascadia Code", Consolas, monospace;
-  }
-  .type { min-width: 0; }
+  .type { display: flex; align-items: center; gap: 10px; background: var(--term-bg); color: var(--term-ink); border-radius: 10px; padding: 11px 13px; margin: 8px 0; max-width: 100%; min-width: 0; font: 14px/1.4 ui-monospace, "Cascadia Code", Consolas, monospace; }
   .type span { overflow-x: auto; white-space: nowrap; flex: 1; min-width: 0; }
-  .type button {
-    font: inherit; color: var(--term-dim); background: none; border: 1px solid #353944;
-    border-radius: 6px; padding: 3px 9px; cursor: pointer; flex: none;
-  }
+  .type button { font: inherit; color: var(--term-dim); background: none; border: 1px solid #353944; border-radius: 6px; padding: 3px 9px; cursor: pointer; flex: none; }
   .type button:hover { color: var(--term-ink); }
   .results { display: grid; gap: 12px; margin-top: 20px; }
   .result { border-radius: 14px; padding: 16px 18px; border: 1px solid var(--line); display: grid; grid-template-columns: auto 1fr; gap: 4px 16px; align-items: start; }
@@ -113,62 +145,123 @@
   .act { background: var(--bad-soft); } .act b { color: var(--bad); }
   .callout { background: var(--soft); border-radius: 14px; padding: 18px 20px; margin-top: 20px; }
   .callout p { margin: 0; }
+  @media (max-width: 520px) {
+    ol.steps > li { padding: 74px 16px 18px 16px; }
+    .switch { display: flex; } .switch label { flex: 1; min-width: 0; padding: 10px 12px; }
+  }
 
   /* Advanced view */
-  .cta { display: flex; flex-wrap: wrap; gap: 12px; align-items: stretch; margin-top: 8px; }
-  .btn {
-    display: inline-flex; align-items: center; padding: 12px 18px; border-radius: 10px;
-    background: var(--accent); color: var(--accent-ink); font-weight: 600; text-decoration: none;
-  }
-  .facts { display: flex; flex-wrap: wrap; gap: 8px 22px; margin: 22px 0 0; padding: 0; list-style: none; color: var(--muted); font-size: 15px; }
-  .facts li::before { content: "\2713"; color: var(--ok); margin-right: 7px; }
-  .term {
-    background: var(--term-bg); color: var(--term-ink); border-radius: 12px; padding: 18px 20px;
-    font: 13.5px/1.6 ui-monospace, "Cascadia Code", Consolas, monospace; overflow-x: auto; margin: 18px 0 0;
-  }
-  .term pre { margin: 0; }
-  .term.wrapped pre { white-space: pre-wrap; overflow-wrap: anywhere; }
-  .dim { color: var(--term-dim); } .hot { color: #ff8a4c; font-weight: 600; } .calm { color: #6fcf97; font-weight: 600; }
-  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 16px; margin-top: 22px; }
-  .card { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 20px; }
-  .card p { margin: 0; color: var(--muted); font-size: 16px; }
-  .num { font: 700 13px/1 ui-monospace, Consolas, monospace; color: var(--accent); display: block; margin-bottom: 10px; }
+  .codebox { background: var(--term-bg); color: var(--term-ink); border-radius: 12px; padding: 18px 20px; font: 13.5px/1.6 ui-monospace, "Cascadia Code", Consolas, monospace; overflow-x: auto; margin: 18px 0 0; }
+  .codebox pre { margin: 0; }
+  .codebox.wrapped pre { white-space: pre-wrap; overflow-wrap: anywhere; }
+  ul.plain { padding-left: 20px; margin: 0; max-width: 46em; } ul.plain li { margin-bottom: 8px; }
+
+  /* Will / won't */
+  .willwont { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; margin-top: 20px; }
+  .willwont ul { list-style: none; padding: 0; margin: 0; }
+  .willwont li { padding: 8px 0 8px 32px; position: relative; border-bottom: 1px dashed var(--line); font-size: 16px; }
+  .willwont li:last-child { border-bottom: 0; }
+  .willwont .yes li::before, .willwont .no li::before { position: absolute; left: 0; top: 7px; width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 13px; }
+  .willwont .yes li::before { content: "\2713"; background: var(--ok-soft); color: var(--ok); }
+  .willwont .no li::before { content: "\2715"; background: var(--bad-soft); color: var(--bad); }
   table { border-collapse: collapse; width: 100%; margin-top: 18px; font-size: 16px; }
   th, td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
   th { color: var(--muted); font-weight: 600; font-size: 14px; }
   .scroll { overflow-x: auto; }
-  code { font: 0.92em ui-monospace, "Cascadia Code", Consolas, monospace; background: var(--surface); border: 1px solid var(--line); border-radius: 5px; padding: 1px 5px; }
-  ul.plain { padding-left: 20px; margin: 0; max-width: 46em; }
-  ul.plain li { margin-bottom: 8px; }
-  footer { padding: 34px 0 50px; border-top: 1px solid var(--line); color: var(--muted); font-size: 15px; }
-  @media (max-width: 520px) {
-    ol.steps > li { padding: 74px 16px 18px 16px; }
-    .switch { display: flex; }
-    .switch label { flex: 1; min-width: 0; padding: 10px 12px; }
-  }
+
+  footer { border-top: 1px solid var(--line); padding: 34px 0 50px; color: var(--muted); font-size: 15px; }
+  footer .cols { display: grid; grid-template-columns: 1.4fr repeat(2, 1fr); gap: 24px; }
+  @media (max-width: 640px) { footer .cols { grid-template-columns: 1fr; } }
+  footer h4 { margin: 0 0 8px; color: var(--ink); font-size: 15px; }
+  footer ul { list-style: none; padding: 0; margin: 0; } footer li { margin-bottom: 6px; }
+  footer a { color: var(--muted); } footer a:hover { color: var(--ink); }
 </style>
 </head>
 <body>
-<input class="pick" type="radio" name="view" id="easy" checked>
-<input class="pick" type="radio" name="view" id="adv">
-<div class="wrap">
-  <header>
-    <div class="brand">write<span>hawk</span></div>
-    <nav>
-      <a href="https://github.com/BiosSystem/writehawk">GitHub</a>
-      <a href="https://github.com/BiosSystem/writehawk/blob/master/docs/RESEARCH.md">Evidence</a>
+<input class="pick" type="radio" name="view" id="easy" checked aria-label="Easy guide">
+<input class="pick" type="radio" name="view" id="adv" aria-label="Advanced guide">
+<main>
+<header class="top">
+  <div class="wrap">
+    <a class="brand" href="#"><svg width="26" height="26" viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="7" fill="var(--accent)"/><path d="M6 11l4 11 4-8 4 8 4-11" fill="none" stroke="var(--accent-ink)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/><circle cx="25.5" cy="9.5" r="2.5" fill="var(--accent-ink)"/></svg><b class="word">write<span>hawk</span></b></a>
+    <nav aria-label="Page">
+      <a class="opt" href="#how">How it works</a>
+      <a class="opt" href="#easy" data-view="easy">Check my PC</a>
+      <a class="opt" href="#advanced" data-view="adv">Advanced</a>
+      <a class="gh" href="https://github.com/BiosSystem/writehawk">GitHub</a>
     </nav>
-  </header>
+  </div>
+</header>
 
+<div class="wrap">
   <div class="hero">
-    <h1>Find the program that is quietly wearing out your SSD.</h1>
-    <p class="lede">Some programs write the same small file over and over, thousands of times an hour. Nothing looks wrong, but the drive inside your PC gets used up faster than it should. writehawk finds that, for free.</p>
+    <div>
+      <div class="eyebrow"><b>Free and open source</b><span>Windows 10 and 11</span><span>No sign-up</span></div>
+      <h1>Find the program that is quietly wearing out your SSD.</h1>
+      <p class="lede">Some programs write the same small file thousands of times an hour. Nothing looks wrong, but the drive wears out faster. One free 20-second check tells you whether a known bug is doing it on your PC, and how to fix it.</p>
+      <div class="cta">
+        <a class="btn primary" href="#easy" data-view="easy">Check my PC<small>Easy guide, step by step</small></a>
+        <a class="btn ghost" href="#advanced" data-view="adv">I use the command line<small>Install and commands</small></a>
+      </div>
+      <p class="reassure">The check only looks. It changes nothing, sends nothing anywhere, and never opens your documents or photos.</p>
+    </div>
+
+    <div class="term demo" id="demo" role="img" aria-label="writehawk running: it finds one graphics card, watches for disk writes for 20 seconds, checks two known problems and ends with: Summary, nothing needs your attention.">
+      <div class="bar-top" aria-hidden="true"><i></i><i></i><i></i><span>Terminal</span></div>
+<pre aria-hidden="true"><span class="dim">&gt;</span> python -m writehawk scan
+<span class="later" data-at="500">Looking at the graphics cards ... 1 found</span>
+<span class="later" data-at="700">Watching for disk writes  <span class="meter"><b></b></span>  done</span>
+<span class="later" data-at="4900">Checking 2 known problems ... done</span>
+<span class="later" data-at="5400">
+nvidia-nvtopps-log-rewrite: <span class="calm">FIXED</span>
+  Example GeForce card: driver 621.35 (affected from 621.14, fixed in 621.35)
+
+amd-eeu-dump-files: <span class="calm">NOT APPLICABLE</span>
+  no amd display adapter in this machine
+
+<b>Summary: nothing needs your attention.</b></span></pre>
+      <span class="term-note later" data-at="5400">Real output, shortened: the full answer also lists a note and the sources for each problem. The watch takes 20 seconds; sped up here.</span>
+    </div>
+  </div>
+
+  <div class="facts" aria-label="Facts">
+    <div class="fact"><b>20 s</b><span>for one check, with a progress bar</span></div>
+    <div class="fact"><b>2</b><span>known driver bugs checked, each with sources</span></div>
+    <div class="fact"><b>150+</b><span>automated tests pass on every change</span></div>
+    <div class="fact"><b>0</b><span>bytes sent anywhere. No network use at all</span></div>
+  </div>
+</div>
+
+<div class="wrap">
+  <section id="how">
+    <h2>How it works</h2>
+    <p class="muted">Three things, in this order. The first two only look. The third only happens if you ask for it.</p>
+    <div class="grid3">
+      <div class="card">
+        <svg class="ico" viewBox="0 0 38 38" aria-hidden="true"><circle cx="16" cy="16" r="10" fill="none" stroke="var(--accent)" stroke-width="3"/><path d="M24 24l9 9" stroke="var(--accent)" stroke-width="3.5" stroke-linecap="round"/><path d="M11 17l3-4 3 5 3-3" fill="none" stroke="var(--accent)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <span class="num">1 WATCH</span><h3>It watches for writes</h3><p>For 20 seconds it looks at which files are being written over and over, and how much of that really reaches the drive.</p>
+      </div>
+      <div class="card">
+        <svg class="ico" viewBox="0 0 38 38" aria-hidden="true"><rect x="5" y="5" width="28" height="28" rx="6" fill="none" stroke="var(--accent)" stroke-width="3"/><path d="M12 14h14M12 20h14M12 26h8" stroke="var(--accent)" stroke-width="2.6" stroke-linecap="round"/></svg>
+        <span class="num">2 EXPLAIN</span><h3>It names the cause</h3><p>It compares what it sees with known driver bugs and tells you which driver version fixes it, and why that fix may not have reached you.</p>
+      </div>
+      <div class="card">
+        <svg class="ico" viewBox="0 0 38 38" aria-hidden="true"><path d="M8 20a11 11 0 1 0 4-8.5" fill="none" stroke="var(--accent)" stroke-width="3" stroke-linecap="round"/><path d="M7 6v7h7" fill="none" stroke="var(--accent)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <span class="num">3 FIX, IF YOU ASK</span><h3>It can fix it, with an undo</h3><p>Only when you ask: it switches off the faulty part, keeps a record of how things were, and puts everything back with one command.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="guide-head" id="guides">
+    <h2>Pick your guide</h2>
+    <p class="muted">Same tool, two ways to explain it.</p>
     <div class="switch" role="group" aria-label="Choose a guide">
       <label for="easy">Easy guide<small>step by step, no experience needed</small></label>
       <label for="adv">Advanced<small>commands and details</small></label>
     </div>
-  </div>
+  </section>
 
+  <div class="views">
   <!-- ============================== EASY ============================== -->
   <div class="view-easy">
     <section>
@@ -180,10 +273,7 @@
           <figcaption class="cap-good">A normal program</figcaption>
           <svg viewBox="0 0 340 210" role="img" aria-label="A page with a few neat lines of writing">
             <rect x="20" y="10" width="300" height="190" rx="10" fill="var(--paper)" stroke="var(--line)" stroke-width="2"/>
-            <g stroke="var(--pen)" stroke-width="5" stroke-linecap="round">
-              <line x1="46" y1="44" x2="290" y2="44"/><line x1="46" y1="74" x2="260" y2="74"/>
-              <line x1="46" y1="104" x2="280" y2="104"/><line x1="46" y1="134" x2="210" y2="134"/>
-            </g>
+            <g stroke="var(--pen)" stroke-width="5" stroke-linecap="round"><line x1="46" y1="44" x2="290" y2="44"/><line x1="46" y1="74" x2="260" y2="74"/><line x1="46" y1="104" x2="280" y2="104"/><line x1="46" y1="134" x2="210" y2="134"/></g>
             <line x1="46" y1="164" x2="290" y2="164" stroke="var(--line)" stroke-width="3" stroke-linecap="round" stroke-dasharray="2 10"/>
           </svg>
           <p>Writes a little, in new places. The page lasts for years.</p>
@@ -192,17 +282,9 @@
           <figcaption class="cap-bad">A stuck program</figcaption>
           <svg viewBox="0 0 340 210" role="img" aria-label="A page where one spot has been scribbled over until it is worn">
             <rect x="20" y="10" width="300" height="190" rx="10" fill="var(--paper)" stroke="var(--line)" stroke-width="2"/>
-            <g stroke="var(--line)" stroke-width="3" stroke-linecap="round" stroke-dasharray="2 10">
-              <line x1="46" y1="44" x2="290" y2="44"/><line x1="46" y1="164" x2="290" y2="164"/>
-            </g>
+            <g stroke="var(--line)" stroke-width="3" stroke-linecap="round" stroke-dasharray="2 10"><line x1="46" y1="44" x2="290" y2="44"/><line x1="46" y1="164" x2="290" y2="164"/></g>
             <ellipse cx="170" cy="104" rx="92" ry="34" fill="var(--bad-soft)" stroke="var(--bad)" stroke-width="2" stroke-dasharray="5 5"/>
-            <g stroke="var(--bad)" stroke-width="5" stroke-linecap="round" fill="none">
-              <path d="M100 94 q20 -14 40 0 t40 0 t40 0 t20 0"/>
-              <path d="M98 104 q20 14 40 0 t40 0 t40 0 t24 0"/>
-              <path d="M102 114 q20 -14 40 0 t40 0 t40 0 t18 0"/>
-              <path d="M106 99 q18 12 36 0 t36 0 t36 0 t22 0"/>
-              <path d="M104 109 q18 -12 36 0 t36 0 t36 0 t24 0"/>
-            </g>
+            <g stroke="var(--bad)" stroke-width="5" stroke-linecap="round" fill="none"><path d="M100 94 q20 -14 40 0 t40 0 t40 0 t20 0"/><path d="M98 104 q20 14 40 0 t40 0 t40 0 t24 0"/><path d="M102 114 q20 -14 40 0 t40 0 t40 0 t18 0"/><path d="M106 99 q18 12 36 0 t36 0 t36 0 t22 0"/><path d="M104 109 q18 -12 36 0 t36 0 t36 0 t24 0"/></g>
           </svg>
           <p>Writes the same spot all day. That spot wears out early.</p>
         </figure>
@@ -214,7 +296,7 @@
       </div>
     </section>
 
-    <section>
+    <section id="steps">
       <h2>Check your PC in 5 steps</h2>
       <p class="muted">About five minutes. You need a Windows 10 or Windows 11 PC and an internet connection.</p>
       <div class="callout"><p><b>Under 18, or not your own PC?</b> Ask the adult who looks after the computer before you install anything. Show them this page.</p></div>
@@ -305,17 +387,9 @@
     <section>
       <h2>Install and scan</h2>
       <div class="type"><span>python -m pip install https://github.com/BiosSystem/writehawk/archive/refs/heads/master.zip</span><button type="button">copy</button></div>
-      <div class="cta"><a class="btn" href="https://github.com/BiosSystem/writehawk">View on GitHub</a></div>
-      <ul class="facts">
-        <li>Windows 10 and 11, 64-bit</li>
-        <li>Python 3.11 or newer, nothing else</li>
-        <li>MIT license</li>
-        <li>No driver, no background service</li>
-        <li>No network access</li>
-        <li>Changes nothing on its own: workarounds need <code>--apply</code></li>
-      </ul>
-      <p class="muted" style="margin-top:22px"><code>writehawk scan</code> needs no administrator rights. For every cause it knows, it says whether you have the hardware, whether your driver has the fix, and whether the writes are happening now.</p>
-      <div class="term wrapped"><pre><span class="dim">&gt;</span> writehawk scan
+      <p class="muted" style="margin-top:14px">Windows 10 or 11, 64-bit, and Python 3.11 or newer. Standard library only: nothing else is installed. If the <code>writehawk</code> command is not found, Python's scripts folder is not on your PATH; <code>python -m writehawk</code> works the same everywhere.</p>
+      <p class="muted"><code>scan</code> needs no administrator rights. Steps and the progress bar go to standard error and only to a terminal, so output stays clean for scripts. This is the complete output for a machine with a GeForce card on an affected driver:</p>
+      <div class="codebox wrapped"><pre><span class="dim">&gt;</span> writehawk scan
 <span class="dim">Looking at the graphics cards ... 1 found
 Watching for disk writes  ████████████████████████  done
 Checking 2 known problems ... done</span>
@@ -338,22 +412,12 @@ amd-eeu-dump-files: <span class="calm">NOT APPLICABLE</span>
 unknown rewrite loops: not checked, the file trace needs an elevated terminal
 
 Summary: your graphics driver has 1 known problem. Update it to the version named above.</pre></div>
-      <p class="muted" style="margin-top:16px">If the <code>writehawk</code> command is not found, Python's scripts folder is not on your PATH; <code>python -m writehawk</code> works the same everywhere. The steps and the bar go to standard error and only to a terminal, so <code>report</code> output stays clean for scripts.</p>
-      <p class="muted">From an administrator terminal the scan also traces file writes for its duration, measures the loop, and lists rewrite loops that no known cause explains.</p>
-    </section>
-
-    <section>
-      <h2>What it does</h2>
-      <div class="grid">
-        <div class="card"><span class="num">01 MEASURE</span><h3>Sees rewrites, not just bytes</h3><p>Counts how often each file is written over the same bytes, and how much of that is flushed to the drive. That separates a harmless loop from a harmful one.</p></div>
-        <div class="card"><span class="num">02 EXPLAIN</span><h3>Names the cause</h3><p>Matches what it sees against a catalog of known bugs, each with its sources, and tells you which driver version fixes it and why that version may not have reached you.</p></div>
-        <div class="card"><span class="num">03 ACT</span><h3>Fixes, with an undo</h3><p>Shows the exact registry values a workaround would change. Applies them only with <code>--apply</code>, after recording the prior state, and <code>rollback</code> puts everything back.</p></div>
-      </div>
+      <p class="muted" style="margin-top:16px">From an administrator terminal the scan also traces every file write for its duration, measures the rewrite ratio, and lists heavy rewrite loops that no known cause explains. Those are reported and never acted on. Exit code 1 means a cause is exposed or active.</p>
     </section>
 
     <section>
       <h2>Commands</h2>
-      <div class="term"><pre>writehawk scan                  <span class="dim"># known causes: affected, fixed, mitigated or writing now</span>
+      <div class="codebox"><pre>writehawk scan                  <span class="dim"># known causes: affected, fixed, mitigated or writing now</span>
 writehawk top --seconds 5       <span class="dim"># processes ranked by write rate</span>
 writehawk trace --seconds 15    <span class="dim"># files by bytes written and rewrite ratio (administrator)</span>
 writehawk context               <span class="dim"># display adapters, volumes, idle state, protected processes</span>
@@ -366,7 +430,7 @@ writehawk watch install         <span class="dim"># scheduled task that writes t
 
     <section>
       <h2>Apply a workaround, and undo it</h2>
-      <div class="term"><pre>writehawk fix nvidia-nvtopps-log-rewrite            <span class="dim"># prints the change, does nothing</span>
+      <div class="codebox"><pre>writehawk fix nvidia-nvtopps-log-rewrite            <span class="dim"># prints the change, does nothing</span>
 writehawk fix nvidia-nvtopps-log-rewrite --apply    <span class="dim"># administrator terminal</span>
 writehawk rollback --apply                          <span class="dim"># puts everything back</span></pre></div>
       <ul class="plain" style="margin-top:18px">
@@ -379,38 +443,72 @@ writehawk rollback --apply                          <span class="dim"># puts eve
     </section>
 
     <section>
-      <h2>Known causes today</h2>
-      <div class="scroll">
-      <table>
-        <tr><th>Cause</th><th>What it writes</th><th>Fixed by the vendor in</th></tr>
-        <tr><td>NVIDIA display container</td><td>One log file, <code>nvlog.nvlgstg</code>, over and over</td><td>Hotfix driver 621.35</td></tr>
-        <tr><td>AMD External Events Utility</td><td>Rotating files in an <code>EeuDumps</code> folder while idle</td><td>Adrenalin 26.11.1 for RX 7000 and newer, 26.11.2 for RX 5000 and 6000</td></tr>
-      </table>
-      </div>
-    </section>
-
-    <section>
       <h2>Why the fix did not just arrive</h2>
       <p>A vendor publishing a fix and your machine receiving it are separate events. A hotfix driver may be a manual download only. A fix may ship in an optional release while an older one stays recommended. A driver that came from Windows Update or the PC maker is not replaced by the vendor's own releases. writehawk checks which of these applies to your machine and says so.</p>
     </section>
-
-    <section>
-      <h2>Honest limits</h2>
-      <ul class="plain">
-        <li>It is early software. It is tested on Windows 11 and on Windows Server 2022, whose core is from the Windows 10 line. A Windows 10 desktop itself has not been run yet.</li>
-        <li>The two rules were checked against a replay of their write pattern, because the real bugs cannot be produced on demand.</li>
-        <li>Applying and undoing was verified on a scratch registry key and service in a disposable machine, not on a vendor's own service.</li>
-      </ul>
-      <p style="margin-top:16px">Everything that was and was not verified is written down in the <a href="https://github.com/BiosSystem/writehawk/blob/master/docs/RESEARCH.md">research notes</a>.</p>
-    </section>
+  </div>
   </div>
 
-  <footer>
-    writehawk is free software under the MIT license. It is not affiliated with NVIDIA, AMD or Microsoft.
-    <a href="https://github.com/BiosSystem/writehawk">Source</a> &middot;
-    <a href="https://github.com/BiosSystem/writehawk/issues">Report a problem</a>
-  </footer>
+  <section id="promise">
+    <h2>What writehawk will and won't do</h2>
+    <div class="willwont">
+      <div class="card yes"><h3>It will</h3><ul>
+        <li>Look at which files are being written, and how often</li>
+        <li>Read your graphics driver version and compare it with the fixed one</li>
+        <li>Explain each result in plain words, with its sources</li>
+        <li>Keep a record before any change, and undo from that record</li>
+      </ul></div>
+      <div class="card no"><h3>It won't</h3><ul>
+        <li>Change anything you did not ask for. A fix needs <code>--apply</code></li>
+        <li>Send anything over the internet, ever</li>
+        <li>Open your documents, photos or other files</li>
+        <li>Install a driver or a service. The optional scheduled report is the only part that runs on its own, and only if you set it up</li>
+      </ul></div>
+    </div>
+  </section>
+
+  <section id="known">
+    <h2>Known problems it checks</h2>
+    <div class="scroll">
+    <table>
+      <tr><th>Problem</th><th>What it writes</th><th>Fixed by the vendor in</th></tr>
+      <tr><td>NVIDIA display container</td><td>One log file, <code>nvlog.nvlgstg</code>, over and over</td><td>Hotfix driver 621.35</td></tr>
+      <tr><td>AMD External Events Utility</td><td>Rotating files in an <code>EeuDumps</code> folder while idle</td><td>Adrenalin 26.11.1 for RX 7000 and newer, 26.11.2 for RX 5000 and 6000</td></tr>
+    </table>
+    </div>
+    <p class="muted" style="margin-top:16px">Each problem is added only with evidence, and its sources are printed with every result. Know another program that rewrites a file all day? <a href="https://github.com/BiosSystem/writehawk/issues">Tell us</a>, ideally with the output of <code>writehawk report</code>.</p>
+  </section>
+
+  <section id="limits">
+    <h2>Honest limits</h2>
+    <ul class="plain">
+      <li>It is early software. The tests pass on Windows 11 and on Windows Server 2022 and 2025; Server 2022 shares its core with Windows 10. A Windows 10 desktop has not been run yet.</li>
+      <li>The two known problems were checked against a replay of their write pattern, because the real bugs cannot be produced on demand.</li>
+      <li>Applying and undoing a workaround was verified on a test key and service in a throwaway Windows, not on a vendor's own service.</li>
+    </ul>
+    <p style="margin-top:16px">Everything that was and was not verified is written down in the <a href="https://github.com/BiosSystem/writehawk/blob/master/docs/RESEARCH.md">research notes</a>.</p>
+  </section>
 </div>
+
+<footer>
+  <div class="wrap cols">
+    <div>
+      <a class="brand" href="#"><svg width="22" height="22" viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="7" fill="var(--accent)"/><path d="M6 11l4 11 4-8 4 8 4-11" fill="none" stroke="var(--accent-ink)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/><circle cx="25.5" cy="9.5" r="2.5" fill="var(--accent-ink)"/></svg><b class="word">write<span>hawk</span></b></a>
+      <p style="margin-top:12px">Free software under the MIT license. Not affiliated with NVIDIA, AMD or Microsoft.</p>
+    </div>
+    <div><h4>Project</h4><ul>
+      <li><a href="https://github.com/BiosSystem/writehawk">Source code</a></li>
+      <li><a href="https://github.com/BiosSystem/writehawk/blob/master/CHANGELOG.md">What changed</a></li>
+      <li><a href="https://github.com/BiosSystem/writehawk/blob/master/docs/RESEARCH.md">Evidence and sources</a></li>
+    </ul></div>
+    <div><h4>Help and trust</h4><ul>
+      <li><a href="https://github.com/BiosSystem/writehawk/issues">Report a problem</a></li>
+      <li><a href="https://github.com/BiosSystem/writehawk/blob/master/SECURITY.md">Security and privacy</a></li>
+      <li><a href="https://github.com/BiosSystem/writehawk/blob/master/LICENSE">License</a></li>
+    </ul></div>
+  </div>
+</footer>
+</main>
 <script>
   (function () {
     document.querySelectorAll(".type button").forEach(function (button) {
@@ -423,21 +521,50 @@ writehawk rollback --apply                          <span class="dim"># puts eve
         });
       });
     });
-    // Remember the chosen guide. The page works the same without this.
-    var views = ["easy", "adv"];
-    try {
-      var saved = localStorage.getItem("writehawk-view");
-      if (location.hash === "#advanced") { saved = "adv"; }
-      if (location.hash === "#easy") { saved = "easy"; }
-      if (views.indexOf(saved) >= 0) { document.getElementById(saved).checked = true; }
-    } catch (ignored) {}
-    views.forEach(function (id) {
-      document.getElementById(id).addEventListener("change", function () {
-        try { localStorage.setItem("writehawk-view", id); } catch (ignored) {}
-        // The two guides differ in length, so start the new one from its top.
-        document.querySelector(".switch").scrollIntoView({ block: "start" });
+
+    var ids = { easy: "easy", advanced: "adv", adv: "adv" };
+    function choose(id, scroll) {
+      document.getElementById(id).checked = true;
+      try { localStorage.setItem("writehawk-view", id); } catch (ignored) {}
+      if (scroll) { document.getElementById("guides").scrollIntoView({ block: "start" }); }
+    }
+    // Links that name a guide select it and go to it. Without scripts they still
+    // land on the page; the easy guide is shown by default.
+    document.querySelectorAll("a[data-view]").forEach(function (link) {
+      link.addEventListener("click", function (event) {
+        event.preventDefault();
+        choose(link.getAttribute("data-view"), true);
+        history.replaceState(null, "", link.getAttribute("href"));
       });
     });
+    ["easy", "adv"].forEach(function (id) {
+      document.getElementById(id).addEventListener("change", function () { choose(id, true); });
+    });
+    var start = ids[location.hash.slice(1)];
+    try { if (!start) { start = localStorage.getItem("writehawk-view"); } } catch (ignored) {}
+    if (start === "easy" || start === "adv") {
+      document.getElementById(start).checked = true;
+      if (ids[location.hash.slice(1)]) { document.getElementById("guides").scrollIntoView({ block: "start" }); }
+    }
+
+    // Play the terminal demo once, when it is first seen.
+    var demo = document.getElementById("demo");
+    var still = window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (demo && !still && "IntersectionObserver" in window) {
+      var lines = demo.querySelectorAll(".later");
+      var meter = demo.querySelector(".meter b");
+      lines.forEach(function (line) { line.classList.add("wait"); });
+      meter.style.width = "0";
+      var seen = new IntersectionObserver(function (entries) {
+        if (!entries[0].isIntersecting) { return; }
+        seen.disconnect();
+        lines.forEach(function (line) {
+          setTimeout(function () { line.classList.remove("wait"); }, +line.getAttribute("data-at"));
+        });
+        setTimeout(function () { meter.classList.add("grow"); meter.style.width = "100%"; }, 700);
+      }, { threshold: 0.4 });
+      seen.observe(demo);
+    }
   })();
 </script>
 </body>

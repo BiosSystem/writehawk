@@ -43,4 +43,6 @@ Versions follow [Semantic Versioning](https://semver.org/).
   `scan` ends with a one-line summary in plain words.
 - Named writehawk. A page for the project under `docs/index.html`, with an
   easy step by step guide beside the advanced one.
+- The project page opens with a short demo of a real scan, facts about
+  testing, a will and won't list, link preview data and a fuller footer.
 - Installable package with an `writehawk` command; Python 3.11 to 3.14.
