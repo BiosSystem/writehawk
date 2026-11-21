@@ -157,7 +157,7 @@ def _file_trace() -> str:
         tracker = RewriteTracker()
         with FileTrace(tracker, session="writehawk-selftest") as trace:
             if not trace.ready:
-                raise RuntimeError("the trace started but delivered no events within 3 s")
+                raise RuntimeError("the trace started but delivered no events within 10 s")
             fd = os.open(path, os.O_RDWR | os.O_CREAT | os.O_BINARY)
             try:
                 _rewrite(fd, 50)

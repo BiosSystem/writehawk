@@ -67,6 +67,8 @@ TRACE_LEVEL_INFORMATION = 4
 EVENT_HEADER_FLAG_32_BIT_HEADER = 0x20
 INVALID_TRACE_HANDLE = 0xFFFFFFFFFFFFFFFF
 MAX_OBJECT_NAMES = 200_000
+# What start() writes to prove the session is live: an odd size, easy to tell apart.
+MARKER = b"writehawk-ready!!"
 
 
 # ---- payload parsing (pure, 64-bit pointers) --------------------------------
@@ -408,7 +410,7 @@ class FileTrace:
         self._thread.start()
         self.ready = self._wait_ready()
 
-    def _wait_ready(self, timeout: float = 3.0) -> bool:
+    def _wait_ready(self, timeout: float = 10.0) -> bool:
         """Return once the session delivers events, proven with a write of our own.
 
         Enabling the provider takes effect a moment after the call returns. Seen
@@ -429,23 +431,28 @@ class FileTrace:
                 # when the first ones were missed.
                 fd = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_BINARY)
                 try:
-                    os.write(fd, b"r")
+                    os.write(fd, MARKER)
                 finally:
                     os.close(fd)
                 self.flush(timeout=0.5, quiet=0.05)
                 with self.lock:
                     seen = [f.file_id for f in self.tracker.files.values()
-                            if f.pid == mine and os.path.normcase(
-                                self.tracker.name_of(f.file_id) or "") == wanted]
+                            if f.pid == mine and self._is_marker(f, wanted)]
         finally:
             with self.lock:
                 for file_id in {f.file_id for f in self.tracker.files.values()
-                                if os.path.normcase(self.tracker.name_of(f.file_id) or "")
-                                == wanted}:
+                                if f.pid == mine and self._is_marker(f, wanted)}:
                     self.tracker.forget(file_id)
                     self.name_sources.pop(file_id, None)
             shutil.rmtree(folder, ignore_errors=True)
         return bool(seen)
+
+    def _is_marker(self, entry, wanted: str) -> bool:
+        """By name, or by its odd write size when the name has not arrived yet."""
+        name = self.tracker.name_of(entry.file_id)
+        if name is not None:
+            return os.path.normcase(name) == wanted
+        return entry.writes > 0 and entry.bytes_written == entry.writes * len(MARKER)
 
     def _pump(self) -> None:
         self._lib.ProcessTrace(ctypes.byref(self._trace_handle), 1, None, None)
