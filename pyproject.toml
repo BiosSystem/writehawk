@@ -1,0 +1,51 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "writehawk"
+version = "0.1.0.dev0"
+description = "Finds Windows programs that rewrite the same file in a loop, explains known causes, applies and undoes workarounds"
+readme = "README.md"
+license = {text = "MIT"}
+requires-python = ">=3.11"
+dependencies = []
+classifiers = [
+    "Development Status :: 2 - Pre-Alpha",
+    "Environment :: Console",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: Microsoft :: Windows :: Windows 10",
+    "Operating System :: Microsoft :: Windows :: Windows 11",
+    "Programming Language :: Python :: 3 :: Only",
+    "Topic :: System :: Monitoring",
+]
+
+[project.urls]
+Homepage = "https://biossystem.github.io/writehawk/"
+Source = "https://github.com/BiosSystem/writehawk"
+Issues = "https://github.com/BiosSystem/writehawk/issues"
+
+[project.scripts]
+writehawk = "writehawk.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+"writehawk.rules" = ["catalog.json"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
+
+[tool.ruff]
+line-length = 100
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP", "BLE", "PL", "PYI", "SIM"]
+ignore = [
+    "PLR2004",  # Win32 constants and test values are literal on purpose
+    "PLR0913",
+    "PLR0917",
+]

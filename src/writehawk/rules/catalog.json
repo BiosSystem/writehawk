@@ -1,0 +1,72 @@
+{
+  "format": 1,
+  "rules": [
+    {
+      "id": "nvidia-nvtopps-log-rewrite",
+      "vendor": "nvidia",
+      "title": "NVIDIA display container rewrites its log file without pause",
+      "summary": "A plugin of the NVIDIA display container service rewrites one log file continuously. Reports reach tens of gigabytes per hour. Not every machine on an affected driver shows it.",
+      "sources": [
+        "https://www.nvidia.com/en-us/geforce/forums/game-ready-drivers/13/592907/continuous-writing-of-gigabytes-to-ssd-to-nvtopps-/",
+        "https://wccftech.com/nvidia-releases-gpu-hotfix-driver-621-35-fixes-excessive-ssd-writes/"
+      ],
+      "affected_from": "621.14",
+      "fixed_in": "621.35",
+      "fix_note": "621.35 is a hotfix driver based on 621.24, for Windows 10 and 11.",
+      "delivery_note": "The fix is a hotfix driver. NVIDIA publishes hotfix drivers as a separate download from its support site and folds them into the next regular driver; no report shows the NVIDIA app or Windows Update offering this one. It has to be downloaded and installed by hand.",
+      "delivery_source": "https://nvidia.custhelp.com/app/answers/detail/a_id/5940",
+      "files": [
+        "%ProgramData%\\NVIDIA Corporation\\nvtopps\\nct\\*"
+      ],
+      "processes": ["NVDisplay.Container.exe"],
+      "workaround": {
+        "vendor_documented": false,
+        "requires": null,
+        "takes_effect": {"service": "NVDisplay.ContainerLocalSystem", "action": "restart"},
+        "note": "Stops the container from loading the plugin that writes the log. NVIDIA does not document this value. It was seen to stop the writes on one affected machine.",
+        "steps": [
+          {
+            "type": "registry_dword",
+            "key": "HKLM\\SYSTEM\\CurrentControlSet\\Services\\NVDisplay.ContainerLocalSystem\\Parameters\\LocalSystem\\_nvtopps",
+            "name": "DisableLoad",
+            "value": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "amd-eeu-dump-files",
+      "vendor": "amd",
+      "title": "AMD External Events Utility writes dump files while idle",
+      "summary": "The AMD External Events Utility service writes rotating dump files into an EeuDumps folder while the machine is idle and when windows are moved or resized.",
+      "sources": [
+        "https://www.igorslab.de/en/amd-adrenalin-26-11-1-fixes-excessive-ssd-writes-radeon-rx-7000-rx-9000/",
+        "https://www.techspot.com/news/114496-amd-confirms-gpu-driver-bug-writing-data-continuously.html",
+        "https://www.guru3d.com/story/amd-adrenalin-26112-fixes-more-radeon-ssd-writes-and-game-crashes/"
+      ],
+      "affected_from": null,
+      "fixed_in": "26.11.1",
+      "fix_note": "26.11.1 is reported to fix the writes on Radeon RX 7000 series and newer; 26.11.2 is reported to extend the fix to RX 5000 and RX 6000. Nothing is stated for older or integrated adapters, so a newer version number alone does not prove the fix there.",
+      "delivery_note": "The fix first appeared in a release AMD lists as Optional, while an older release stayed the Recommended one. An installation that follows recommended releases only, or a driver that came from Windows Update or the system maker, does not receive it on its own.",
+      "delivery_source": "https://www.amd.com/en/resources/support-articles/release-notes/RN-RAD-WIN-26-11-1.html",
+      "files": [
+        "%SystemRoot%\\System32\\AMD\\EeuDumps\\*",
+        "%SystemRoot%\\System32\\DriverStore\\FileRepository\\*\\*\\EeuDumps\\*"
+      ],
+      "processes": ["atiesrxx.exe", "atieclxx.exe"],
+      "workaround": {
+        "vendor_documented": false,
+        "requires": "adapter_drives_no_display",
+        "takes_effect": {"service": "AMD External Events Utility", "action": "stop"},
+        "note": "Disables the service. Reported to break FreeSync and hotkeys when the AMD adapter drives a display, so it is offered only when it drives none.",
+        "steps": [
+          {
+            "type": "service_start",
+            "service": "AMD External Events Utility",
+            "start": 4
+          }
+        ]
+      }
+    }
+  ]
+}

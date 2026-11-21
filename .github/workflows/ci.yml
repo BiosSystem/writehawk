@@ -1,0 +1,48 @@
+name: CI
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: Python ${{ matrix.python }}
+    runs-on: windows-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python: ['3.11', '3.12', '3.13', '3.14']
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+
+      - name: Install into a venv
+        run: |
+          python -m venv .venv
+          .venv\Scripts\python -m pip install --disable-pip-version-check . pytest ruff
+
+      - name: Lint
+        run: .venv\Scripts\python -m ruff check .
+
+      # Tests that change the system skip here: they run only in the sandbox harness.
+      - name: Tests
+        run: .venv\Scripts\python -m pytest -q -rs
+
+      - name: Installed command
+        run: |
+          .venv\Scripts\writehawk --version
+          .venv\Scripts\writehawk top --seconds 1 --limit 5
+          .venv\Scripts\writehawk context
+          .venv\Scripts\writehawk scan --seconds 2

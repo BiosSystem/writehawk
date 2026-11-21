@@ -1,0 +1,186 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>writehawk: find what is wearing out your SSD</title>
+<meta name="description" content="writehawk finds Windows programs that rewrite the same file in a loop, tells you whether a known driver bug applies to your machine, and can apply and undo a workaround.">
+<style>
+  :root {
+    --bg: #f6f4ef; --surface: #ffffff; --ink: #17181c; --muted: #5d6068;
+    --line: #dedad0; --accent: #b4410e; --accent-ink: #ffffff;
+    --term-bg: #15171c; --term-ink: #d9dbe1; --term-dim: #8a8e99;
+    --ok: #2f7d4f; --warn: #b4410e; --info: #2f5f9e;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #111216; --surface: #1a1c22; --ink: #eceef2; --muted: #a0a4ae;
+      --line: #2b2e37; --accent: #ff8a4c; --accent-ink: #1a0d05;
+      --term-bg: #0b0c0f; --term-ink: #d9dbe1; --term-dim: #7d818c;
+      --ok: #6fcf97; --warn: #ff8a4c; --info: #8ab4f8;
+    }
+  }
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0; background: var(--bg); color: var(--ink);
+    font: 17px/1.6 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  }
+  .wrap { max-width: 980px; margin: 0 auto; padding: 0 20px; }
+  header { padding: 22px 0; display: flex; justify-content: space-between; align-items: center; }
+  .brand { font: 700 20px/1 ui-monospace, "Cascadia Code", Consolas, monospace; letter-spacing: -0.02em; }
+  .brand span { color: var(--accent); }
+  nav a { color: var(--muted); text-decoration: none; margin-left: 20px; font-size: 15px; }
+  nav a:hover { color: var(--ink); }
+  .hero { padding: 56px 0 40px; }
+  h1 { font-size: clamp(34px, 6vw, 58px); line-height: 1.05; letter-spacing: -0.03em; margin: 0 0 18px; text-wrap: balance; }
+  .lede { font-size: clamp(18px, 2.4vw, 21px); color: var(--muted); max-width: 44em; margin: 0 0 28px; }
+  .cta { display: flex; flex-wrap: wrap; gap: 12px; align-items: stretch; }
+  .install {
+    display: flex; align-items: center; gap: 10px; background: var(--term-bg); color: var(--term-ink);
+    border-radius: 10px; padding: 12px 14px; font: 14px/1.4 ui-monospace, "Cascadia Code", Consolas, monospace;
+    max-width: 100%; overflow-x: auto; white-space: nowrap;
+  }
+  .install button {
+    font: inherit; color: var(--term-dim); background: none; border: 1px solid #353944;
+    border-radius: 6px; padding: 3px 9px; cursor: pointer; flex: none;
+  }
+  .install button:hover { color: var(--term-ink); }
+  .btn {
+    display: inline-flex; align-items: center; padding: 12px 18px; border-radius: 10px;
+    background: var(--accent); color: var(--accent-ink); font-weight: 600; text-decoration: none;
+  }
+  .facts { display: flex; flex-wrap: wrap; gap: 8px 22px; margin: 26px 0 0; padding: 0; list-style: none; color: var(--muted); font-size: 15px; }
+  .facts li::before { content: "\2713"; color: var(--ok); margin-right: 7px; }
+  section { padding: 44px 0; border-top: 1px solid var(--line); }
+  h2 { font-size: clamp(24px, 3.4vw, 32px); letter-spacing: -0.02em; line-height: 1.15; margin: 0 0 14px; text-wrap: balance; }
+  p { margin: 0 0 14px; max-width: 46em; }
+  .muted { color: var(--muted); }
+  .term {
+    background: var(--term-bg); color: var(--term-ink); border-radius: 12px; padding: 18px 20px;
+    font: 13.5px/1.6 ui-monospace, "Cascadia Code", Consolas, monospace; overflow-x: auto; margin: 18px 0 0;
+  }
+  .term pre { margin: 0; }
+  .dim { color: var(--term-dim); } .hot { color: #ff8a4c; font-weight: 600; } .calm { color: #6fcf97; font-weight: 600; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 16px; margin-top: 22px; }
+  .card { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 20px; }
+  .card h3 { margin: 0 0 8px; font-size: 18px; }
+  .card p { margin: 0; color: var(--muted); font-size: 16px; }
+  .num { font: 700 13px/1 ui-monospace, Consolas, monospace; color: var(--accent); display: block; margin-bottom: 10px; }
+  table { border-collapse: collapse; width: 100%; margin-top: 18px; font-size: 16px; }
+  th, td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { color: var(--muted); font-weight: 600; font-size: 14px; }
+  .scroll { overflow-x: auto; }
+  code { font: 0.92em ui-monospace, "Cascadia Code", Consolas, monospace; background: var(--surface); border: 1px solid var(--line); border-radius: 5px; padding: 1px 5px; }
+  ul.plain { padding-left: 20px; margin: 0; max-width: 46em; }
+  ul.plain li { margin-bottom: 8px; }
+  footer { padding: 34px 0 50px; border-top: 1px solid var(--line); color: var(--muted); font-size: 15px; }
+  footer a, section a { color: var(--accent); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="brand">write<span>hawk</span></div>
+    <nav>
+      <a href="https://github.com/BiosSystem/writehawk">GitHub</a>
+      <a href="https://github.com/BiosSystem/writehawk/blob/master/docs/RESEARCH.md">Evidence</a>
+    </nav>
+  </header>
+
+  <div class="hero">
+    <h1>Find the program that is quietly wearing out your SSD.</h1>
+    <p class="lede">Some software rewrites the same small file thousands of times an hour. Task Manager shows nothing alarming while the drive absorbs gigabytes a day. writehawk finds the loop, tells you whether a known driver bug applies to your machine, and can apply a workaround you can undo.</p>
+    <div class="cta">
+      <div class="install"><span id="cmd">python -m pip install git+https://github.com/BiosSystem/writehawk</span><button type="button" id="copy">copy</button></div>
+      <a class="btn" href="https://github.com/BiosSystem/writehawk">View on GitHub</a>
+    </div>
+    <ul class="facts">
+      <li>Windows 10 and 11</li>
+      <li>Free and open source, MIT</li>
+      <li>No driver, no background service</li>
+      <li>No network access</li>
+      <li>Changes nothing unless you ask</li>
+    </ul>
+  </div>
+
+  <section>
+    <h2>One command, no administrator rights</h2>
+    <p class="muted">Run <code>writehawk scan</code>. For every cause it knows, it says whether you have the hardware, whether your driver has the fix, and whether the writes are happening right now.</p>
+    <div class="term"><pre><span class="dim">&gt;</span> writehawk scan
+
+nvidia-nvtopps-log-rewrite: <span class="hot">EXPOSED</span>
+  NVIDIA display container rewrites its log file without pause
+  Example GeForce card: driver 621.24 (affected from 621.14, fixed in 621.35)
+  workaround: available, not documented by the vendor
+  why the fix may not have reached this machine:
+    - The fix is a hotfix driver. It has to be downloaded and installed by hand.
+
+amd-eeu-dump-files: <span class="calm">NOT APPLICABLE</span>
+  no amd display adapter in this machine</pre></div>
+  </section>
+
+  <section>
+    <h2>What it does</h2>
+    <div class="grid">
+      <div class="card"><span class="num">01 MEASURE</span><h3>Sees rewrites, not just bytes</h3><p>Counts how often each file is written over the same bytes, and how much of that is flushed to the drive. That separates a harmless loop from a harmful one.</p></div>
+      <div class="card"><span class="num">02 EXPLAIN</span><h3>Names the cause</h3><p>Matches what it sees against a catalog of known bugs, each with its sources, and tells you which driver version fixes it and why that version may not have reached you.</p></div>
+      <div class="card"><span class="num">03 ACT</span><h3>Fixes, with an undo</h3><p>Shows the exact registry values a workaround would change. Applies them only with <code>--apply</code>, after recording the prior state, and <code>rollback</code> puts everything back.</p></div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Known causes today</h2>
+    <div class="scroll">
+    <table>
+      <tr><th>Cause</th><th>What it writes</th><th>Fixed by the vendor in</th></tr>
+      <tr><td>NVIDIA display container</td><td>One log file, <code>nvlog.nvlgstg</code>, over and over</td><td>Hotfix driver 621.35</td></tr>
+      <tr><td>AMD External Events Utility</td><td>Rotating files in an <code>EeuDumps</code> folder while idle</td><td>Adrenalin 26.11.1 and 26.11.2, depending on the card</td></tr>
+    </table>
+    </div>
+    <p class="muted" style="margin-top:16px">Run as administrator, the scan also lists heavy rewrite loops that no known cause explains. Those are reported and never acted on.</p>
+  </section>
+
+  <section>
+    <h2>Why the fix did not just arrive</h2>
+    <p>A vendor publishing a fix and your machine receiving it are separate events. A hotfix driver may be a manual download only. A fix may ship in an optional release while an older one stays recommended. A driver that came from Windows Update or the PC maker is not replaced by the vendor's own releases. writehawk checks which of these applies to your machine and says so.</p>
+  </section>
+
+  <section>
+    <h2>Built to be safe to run</h2>
+    <ul class="plain">
+      <li>Everything is read-only until you pass <code>--apply</code> from an administrator terminal.</li>
+      <li>A catalog entry can only describe registry values. It cannot run a command.</li>
+      <li>The record of a change is on disk before the change is made, and undo works from that record alone.</li>
+      <li>Undo never overwrites a value that something else has changed since, unless you tell it to.</li>
+      <li>No file content is read and nothing leaves the machine.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Honest limits</h2>
+    <ul class="plain">
+      <li>It is early software. It is tested on Windows 11; Windows 10 has not been run yet.</li>
+      <li>The two rules were checked against a replay of their write pattern, because the real bugs cannot be produced on demand.</li>
+      <li>The vendor's fixed driver is always the better answer. A workaround is for the time until you have it.</li>
+    </ul>
+    <p style="margin-top:16px">Everything that was and was not verified is written down in the <a href="https://github.com/BiosSystem/writehawk/blob/master/docs/RESEARCH.md">research notes</a>.</p>
+  </section>
+
+  <footer>
+    writehawk is free software under the MIT license. It is not affiliated with NVIDIA, AMD or Microsoft.
+    <a href="https://github.com/BiosSystem/writehawk">Source</a> &middot;
+    <a href="https://github.com/BiosSystem/writehawk/issues">Report a problem</a>
+  </footer>
+</div>
+<script>
+  document.getElementById("copy").addEventListener("click", function () {
+    var button = this;
+    navigator.clipboard.writeText(document.getElementById("cmd").textContent).then(function () {
+      button.textContent = "copied";
+      setTimeout(function () { button.textContent = "copy"; }, 1500);
+    });
+  });
+</script>
+</body>
+</html>
