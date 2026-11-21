@@ -417,7 +417,9 @@ class FileTrace:
         """
         folder = tempfile.mkdtemp(prefix="writehawk-ready-")
         path = os.path.join(folder, "marker")
-        wanted = os.path.normcase(path)
+        # The trace reports long names; a temp folder can be given in its short
+        # 8.3 form (seen on Windows Server), so compare the resolved path.
+        wanted = os.path.normcase(os.path.realpath(path))
         mine = os.getpid()
         deadline = time.monotonic() + timeout
         seen: list[int] = []
