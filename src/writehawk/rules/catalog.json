@@ -45,8 +45,8 @@
         "https://www.guru3d.com/story/amd-adrenalin-26112-fixes-more-radeon-ssd-writes-and-game-crashes/"
       ],
       "affected_from": null,
-      "fixed_in": "26.11.1",
-      "fix_note": "26.11.1 is reported to fix the writes on Radeon RX 7000 series and newer; 26.11.2 is reported to extend the fix to RX 5000 and RX 6000. Nothing is stated for older or integrated adapters, so a newer version number alone does not prove the fix there.",
+      "fixed_in": "26.11.2",
+      "fix_note": "26.11.1 is reported to fix the writes on Radeon RX 7000 series and newer, and 26.11.2 to extend the fix to RX 5000 and RX 6000. 26.11.2 is shown as the fixed version because it covers both; an RX 7000 or newer card on 26.11.1 already has the fix. Nothing is stated for older or integrated adapters, so a newer version number alone does not prove the fix there.",
       "delivery_note": "The fix first appeared in a release AMD lists as Optional, while an older release stayed the Recommended one. An installation that follows recommended releases only, or a driver that came from Windows Update or the system maker, does not receive it on its own.",
       "delivery_source": "https://www.amd.com/en/resources/support-articles/release-notes/RN-RAD-WIN-26-11-1.html",
       "files": [

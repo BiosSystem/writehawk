@@ -11,7 +11,8 @@ known cause applies to your machine, and can apply and undo a workaround.
 - Windows 10 and 11, 64-bit
 - Python 3.11 or newer, nothing else to install
 - No kernel driver and no background service
-- Changes nothing unless you pass `--apply`
+- Changes nothing on its own: workarounds need `--apply`, the scheduled
+  report needs `watch install`
 
 ## Quick start
 
@@ -71,7 +72,7 @@ cause explains.
 | Cause | Fixed by the vendor in |
 |---|---|
 | NVIDIA display container rewriting `nvlog.nvlgstg` | Hotfix driver 621.35 |
-| AMD External Events Utility writing `EeuDumps` files while idle | Adrenalin 26.11.1 and 26.11.2, depending on the card |
+| AMD External Events Utility writing `EeuDumps` files while idle | Adrenalin 26.11.1 for RX 7000 and newer, 26.11.2 for RX 5000 and 6000 |
 
 The catalog is a data file. Each entry carries its sources, and a rule is only
 added with evidence. Sources and what was and was not verified are in
@@ -129,9 +130,11 @@ reproduces the measurement on your own machine.
 ## Privacy and safety
 
 - No network access. Nothing is sent anywhere.
-- No file content is read. The trace sees names, offsets and sizes.
-- `report` leaves out device ids, serial numbers, the system maker and the
-  names of installed programs. Paths of observed writes can contain a user
+- No document or data file is read. The trace sees names, offsets and sizes.
+  `context` and `report` read the program files of running processes, only to
+  check who signed them.
+- `report` leaves out device instance ids, serial numbers, the system maker
+  and the names of installed programs. Paths of observed writes can contain a user
   name, so read a report before sharing it.
 - The scheduled task from `watch install` only writes the report. It never
   applies a workaround.

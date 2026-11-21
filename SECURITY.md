@@ -16,7 +16,7 @@ Everything is read-only except `fix --apply` and `rollback --apply`:
 - Reads I/O counters of running processes.
 - Reads write counters of volumes and disks.
 - Starts a real-time ETW session on the Kernel-File provider and reads file
-  names, offsets and sizes of writes. No file content is read.
+  names, offsets and sizes of writes. It reads no file content.
 - To name a file that was opened before the trace started, enables the debug
   privilege in its own process, duplicates the writer's file handle with no
   access rights, reads the path and closes the duplicate. The duplicate cannot
@@ -44,6 +44,10 @@ Everything is read-only except `fix --apply` and `rollback --apply`:
 - `writehawk watch install` registers one scheduled task that runs
   `writehawk report` as SYSTEM and writes `%ProgramData%\writehawk\report.json`.
   The task changes nothing else. `writehawk watch remove` deletes it.
+- The trace is a Windows event session named `writehawk`. If the process is
+  killed while it runs (for example the window is closed during an elevated
+  scan), the session stays until the next run stops it or Windows restarts.
+  It holds no data on disk.
 - `writehawk probe` creates and deletes its own files in a new temp folder.
 
 It does not open network connections, send data anywhere, install a service or

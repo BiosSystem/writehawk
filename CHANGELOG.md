@@ -35,6 +35,9 @@ Versions follow [Semantic Versioning](https://semver.org/).
 - `writehawk report`: scan and context as JSON. `writehawk watch`: a scheduled task
   that writes the report and changes nothing.
 - MIT license.
+- The AMD rule reports 26.11.2 as the fixed version. 26.11.1 fixed RX 7000
+  and newer only, so an RX 5000 or 6000 card on 26.11.1 was wrongly shown as
+  fixed.
 - `scan`, `report`, `top` and `trace` show the step they are on and a bar with
   the seconds left while they watch, on standard error and only in a terminal.
   `scan` ends with a one-line summary in plain words.

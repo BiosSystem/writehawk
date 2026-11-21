@@ -35,7 +35,13 @@ def test_version_state(release, state):
 
 def test_an_unknown_first_affected_version_leaves_every_older_release_exposed():
     assert ev.version_state(AMD, "24.10.24") == ev.EXPOSED
-    assert ev.version_state(AMD, "26.11.1") == ev.FIXED
+    assert ev.version_state(AMD, "26.11.2") == ev.FIXED
+
+
+def test_amd_26_11_1_is_not_reported_as_fixed():
+    # 26.11.1 fixed RX 7000 and newer only; an RX 5000 or 6000 card needs 26.11.2.
+    # Without a device list, the safe answer for every card is "update".
+    assert ev.version_state(AMD, "26.11.1") == ev.EXPOSED
 
 
 def test_a_rule_is_skipped_when_its_hardware_is_absent():

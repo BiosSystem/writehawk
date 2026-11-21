@@ -99,7 +99,7 @@ def test_format_scan_explains_each_status():
     assert "writing now: C:\\x\\nvlog.nvlgstg, 2048 KB, rewritten 512x" in text
     assert "workaround: available, not documented by the vendor" in text
     assert "amd-eeu-dump-files: EXPOSED" in text
-    assert "(first affected version not known, fixed in 26.11.1)" in text
+    assert "(first affected version not known, fixed in 26.11.2)" in text
     assert "workaround: not offered on this machine" in text
     assert "amd-eeu-dump-files: NOT APPLICABLE" in text
     assert "not checked, the file trace needs an elevated terminal" in text

@@ -210,7 +210,7 @@
       <div class="two">
         <div class="note"><h3>Is this real?</h3><p>Yes. In November 2026 it was reported for graphics card software from both NVIDIA and AMD. Both companies have released fixes since.</p></div>
         <div class="note"><h3>Is my PC broken?</h3><p>Almost certainly not. This is about wear over months, not sudden damage. It is worth a five minute check, not a panic.</p></div>
-        <div class="note"><h3>Is writehawk safe?</h3><p>The check only looks. It changes nothing on your PC, sends nothing to the internet, and never reads what is inside your files.</p></div>
+        <div class="note"><h3>Is writehawk safe?</h3><p>The check only looks. It changes nothing on your PC, sends nothing to the internet, and never opens your documents, photos or other files.</p></div>
       </div>
     </section>
 
@@ -228,14 +228,14 @@
           <h3>Get Python</h3>
           <p>writehawk is written in a language called Python, so the PC needs Python first. Type this and press <kbd>Enter</kbd>:</p>
           <div class="type"><span>python</span><button type="button">copy</button></div>
-          <p>If the Microsoft Store opens, click <b>Get</b> and wait until it finishes. Then close the Terminal and open it again (step 1).</p>
+          <p>If the Microsoft Store opens, click <b>Get</b> (or <b>Install</b>) and wait until it finishes. Then close the Terminal and open it again (step 1).</p>
           <p class="tip">If you see <code>&gt;&gt;&gt;</code> instead, Python is already there. Type <kbd>exit()</kbd> and press <kbd>Enter</kbd>.</p>
         </li>
         <li>
           <h3>Install writehawk</h3>
-          <p>Copy this line, paste it into the Terminal (right-click pastes), and press <kbd>Enter</kbd>:</p>
+          <p>Copy this line, paste it into the Terminal with <kbd>Ctrl</kbd>+<kbd>V</kbd>, and press <kbd>Enter</kbd>:</p>
           <div class="type"><span>python -m pip install https://github.com/BiosSystem/writehawk/archive/refs/heads/master.zip</span><button type="button">copy</button></div>
-          <p class="tip">Wait until you see "Successfully installed writehawk". It takes under a minute.</p>
+          <p class="tip">Wait until you see "Successfully installed writehawk". It takes under a minute. A yellow warning that something "is not on PATH" is normal here; you can ignore it.</p>
         </li>
         <li>
           <h3>Run the check</h3>
@@ -283,7 +283,7 @@
       <p>The real fix is a newer graphics driver from the company that made your graphics card. writehawk tells you which company and which version in its answer.</p>
       <div class="two">
         <div class="note"><h3>NVIDIA (GeForce)</h3><p>Get the newest driver from <a href="https://www.nvidia.com/en-us/drivers/">nvidia.com/drivers</a>. The fix first came as a separate "hotfix" download, which is why the normal update button may not have offered it.</p></div>
-        <div class="note"><h3>AMD (Radeon)</h3><p>Get the newest driver from <a href="https://www.amd.com/en/support/download/drivers.html">amd.com/support</a>. Choose the newest version, even if it is marked "Optional".</p></div>
+        <div class="note"><h3>AMD (Radeon)</h3><p>Get the newest driver from <a href="https://www.amd.com/en/support/download/drivers.html">amd.com/support</a>. Choose the newest version, even if it is marked "Optional". writehawk asks for 26.11.2 or newer, because that is the first version with the fix for every Radeon RX card it was reported on.</p></div>
       </div>
       <p style="margin-top:18px">After updating and restarting, run step 4 again. The answer should now say <b>FIXED</b>.</p>
       <div class="callout"><p><b>Cannot update right now?</b> writehawk can switch off the faulty part for you and switch it back on later. That needs an administrator and a little more care, so it lives in the <label for="adv" style="color:var(--accent);text-decoration:underline;cursor:pointer">Advanced guide</label>.</p></div>
@@ -312,7 +312,7 @@
         <li>MIT license</li>
         <li>No driver, no background service</li>
         <li>No network access</li>
-        <li>Read-only unless you pass <code>--apply</code></li>
+        <li>Changes nothing on its own: workarounds need <code>--apply</code></li>
       </ul>
       <p class="muted" style="margin-top:22px"><code>writehawk scan</code> needs no administrator rights. For every cause it knows, it says whether you have the hardware, whether your driver has the fix, and whether the writes are happening now.</p>
       <div class="term wrapped"><pre><span class="dim">&gt;</span> writehawk scan
@@ -384,7 +384,7 @@ writehawk rollback --apply                          <span class="dim"># puts eve
       <table>
         <tr><th>Cause</th><th>What it writes</th><th>Fixed by the vendor in</th></tr>
         <tr><td>NVIDIA display container</td><td>One log file, <code>nvlog.nvlgstg</code>, over and over</td><td>Hotfix driver 621.35</td></tr>
-        <tr><td>AMD External Events Utility</td><td>Rotating files in an <code>EeuDumps</code> folder while idle</td><td>Adrenalin 26.11.1 and 26.11.2, depending on the card</td></tr>
+        <tr><td>AMD External Events Utility</td><td>Rotating files in an <code>EeuDumps</code> folder while idle</td><td>Adrenalin 26.11.1 for RX 7000 and newer, 26.11.2 for RX 5000 and 6000</td></tr>
       </table>
       </div>
     </section>

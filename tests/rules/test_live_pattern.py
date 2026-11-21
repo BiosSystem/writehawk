@@ -12,9 +12,11 @@ import time
 
 import pytest
 
+from writehawk import cli
 from writehawk.context.gpu import Gpu
 from writehawk.measure import filetrace as ft
 from writehawk.measure.rewrite import RewriteTracker
+from writehawk.progress import Progress
 from writehawk.rules import catalog
 from writehawk.rules import evaluate as ev
 
@@ -74,3 +76,37 @@ def test_sandbox_the_nvidia_rule_matches_its_write_pattern():
     assert other_hardware.status == ev.NOT_APPLICABLE
     # The same writes are not also reported as an unexplained loop.
     assert not any("nvlog" in loop.path for loop in ev.rewrite_loops(tracker, [rule], 20.0, 0))
+
+
+LOOPER = """
+import os, sys, time
+fd = os.open(sys.argv[1], os.O_RDWR | os.O_CREAT | os.O_BINARY)
+print("ready", flush=True)
+end = time.time() + float(sys.argv[2])
+while time.time() < end:
+    os.lseek(fd, 0, 0)
+    os.write(fd, b"z" * 4096)
+os.close(fd)
+"""
+
+
+@pytest.mark.skipif(os.environ.get("WRITEHAWK_SANDBOX") != "1" or not ft.is_elevated(),
+                    reason="needs an elevated trace: runs only inside tools/sandbox")
+def test_sandbox_an_elevated_scan_lists_a_loop_no_rule_explains(tmp_path):
+    path = tmp_path / "state.db"
+    child = subprocess.Popen([sys.executable, "-c", LOOPER, str(path), "8"],
+                             stdout=subprocess.PIPE, text=True)
+    try:
+        assert child.stdout.readline().strip() == "ready"
+        findings, loops = cli._collect(4, [], Progress(enabled=False))
+    finally:
+        child.wait(timeout=30)
+    assert loops is not None, "the trace did not run"
+    mine = [loop for loop in loops if os.path.normcase(loop.path) == os.path.normcase(str(path))]
+    assert mine, [loop.path for loop in loops]
+    assert mine[0].rewrite_ratio >= ev.LOOP_MIN_RATIO
+    assert mine[0].bytes_written >= ev.LOOP_MIN_BYTES
+    assert all(finding.status == ev.NOT_APPLICABLE for finding in findings)
+    text = cli.format_scan(findings, loops, cli.drivers.read())
+    assert "unknown rewrite loops (reported only, no rule explains them)" in text
+    assert str(path) in text
