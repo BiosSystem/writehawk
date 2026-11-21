@@ -159,7 +159,8 @@ def _file_trace() -> str:
             if not trace.ready:
                 raise RuntimeError(f"the trace started but its own test write did not come "
                                    f"through within 10 s ({trace.events} events, "
-                                   f"{trace.errors} errors)")
+                                   f"{trace.errors} errors; own writes seen: "
+                                   f"{trace.own_files() or 'none'})")
             fd = os.open(path, os.O_RDWR | os.O_CREAT | os.O_BINARY)
             try:
                 _rewrite(fd, 50)

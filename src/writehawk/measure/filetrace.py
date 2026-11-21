@@ -448,11 +448,19 @@ class FileTrace:
         return bool(seen)
 
     def _is_marker(self, entry, wanted: str) -> bool:
-        """By name, or by its odd write size when the name has not arrived yet."""
+        """By name, or by its odd write size, whatever name it was given."""
         name = self.tracker.name_of(entry.file_id)
-        if name is not None:
-            return os.path.normcase(name) == wanted
+        if name is not None and os.path.normcase(name) == wanted:
+            return True
         return entry.writes > 0 and entry.bytes_written == entry.writes * len(MARKER)
+
+    def own_files(self, limit: int = 3) -> list[str]:
+        """What this process was seen writing, for a diagnostic message."""
+        mine = os.getpid()
+        with self.lock:
+            rows = [f for f in self.tracker.files.values() if f.pid == mine][:limit]
+            return [f"{self.tracker.name_of(f.file_id) or '(unnamed)'}: {f.writes} writes, "
+                    f"{f.bytes_written} bytes" for f in rows]
 
     def _pump(self) -> None:
         self._lib.ProcessTrace(ctypes.byref(self._trace_handle), 1, None, None)
