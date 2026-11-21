@@ -35,5 +35,6 @@ Versions follow [Semantic Versioning](https://semver.org/).
 - `writehawk report`: scan and context as JSON. `writehawk watch`: a scheduled task
   that writes the report and changes nothing.
 - MIT license.
-- Named writehawk. A page for the project under `docs/index.html`.
+- Named writehawk. A page for the project under `docs/index.html`, with an
+  easy step by step guide beside the advanced one.
 - Installable package with an `writehawk` command; Python 3.11 to 3.14.

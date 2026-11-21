@@ -77,7 +77,9 @@ State: in progress. Commands are done; the Windows 10 run and the release are no
 - [x] Sandbox run builds the package, installs it into a new environment and
       uses the installed command
 - [ ] Windows 10 run of the full suite. Both known causes are reported on
-      Windows 10 as well, so it is a supported target, not an optional one
+      Windows 10 as well, so it is a supported target, not an optional one.
+      Closest so far: the suite passes elevated on Windows Server 2022
+      (build 20348), including the live trace tests
 - [ ] First tagged release
 - Not planned for the first release: the scheduled task applying pre-approved
   rules

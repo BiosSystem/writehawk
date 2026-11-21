@@ -16,9 +16,12 @@ known cause applies to your machine, and can apply and undo a workaround.
 ## Quick start
 
 ```
-python -m pip install git+https://github.com/BiosSystem/writehawk
-writehawk scan
+python -m pip install https://github.com/BiosSystem/writehawk/archive/refs/heads/master.zip
+python -m writehawk scan
 ```
+
+New to the command line? The [project page](https://biossystem.github.io/writehawk/)
+has a step by step guide with pictures.
 
 `scan` needs no administrator rights. It answers four questions for every
 cause it knows:
@@ -124,10 +127,11 @@ rights.
 
 ## Status
 
-Early. The current version is tested on Windows 11. Be aware of the limits:
+Early. Be aware of the limits:
 
-- Nothing has been run on Windows 10 yet, although both known causes occur
-  there.
+- The suite passes on Windows 11 and on Windows Server 2022, whose core is
+  from the Windows 10 line. A Windows 10 desktop itself has not been run yet,
+  although both known causes occur there.
 - The two rules were checked against a replay of their write pattern, not
   against the real bugs, which cannot be produced on demand.
 - Applying and undoing a workaround was verified on a scratch registry key and

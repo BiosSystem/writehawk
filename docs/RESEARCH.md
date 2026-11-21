@@ -86,6 +86,19 @@ Sources:
 - https://learn.microsoft.com/en-us/windows/client-management/mdm/policy-csp-update
 - https://nvidia.custhelp.com/app/answers/detail/a_id/5940
 
+### Builds the suite has run on
+
+| Build | Where | Result |
+|---|---|---|
+| 10.0.26300, Windows 11 | Development machine, standard user | Host suite passes; elevated tests skip |
+| 10.0.26100, Windows 11 | Windows Sandbox, elevated | Full suite and ten repeats of the live tests pass |
+| Windows Server 2025 | Hosted runner, elevated | Suite passes, including the live trace tests |
+| 10.0.20348, Windows Server 2022 | Hosted runner, elevated | Suite passes, including the live trace tests |
+| Windows 10 desktop | Not run | |
+
+Server 2022 shares its kernel line with Windows 10, which is the nearest
+evidence so far that the trace and the handle lookup work there.
+
 ### Unverified
 
 Write loops have been claimed for other vendor utilities (system control

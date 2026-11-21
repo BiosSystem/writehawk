@@ -4,24 +4,26 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>writehawk: find what is wearing out your SSD</title>
-<meta name="description" content="writehawk finds Windows programs that rewrite the same file in a loop, tells you whether a known driver bug applies to your machine, and can apply and undo a workaround.">
+<meta name="description" content="writehawk finds Windows programs that rewrite the same file in a loop, tells you whether a known driver bug applies to your machine, and can apply and undo a workaround. With an easy step-by-step guide.">
 <style>
   :root {
     --bg: #f6f4ef; --surface: #ffffff; --ink: #17181c; --muted: #5d6068;
-    --line: #dedad0; --accent: #b4410e; --accent-ink: #ffffff;
+    --line: #dedad0; --accent: #b4410e; --accent-ink: #ffffff; --soft: #f1e4da;
     --term-bg: #15171c; --term-ink: #d9dbe1; --term-dim: #8a8e99;
-    --ok: #2f7d4f; --warn: #b4410e; --info: #2f5f9e;
+    --ok: #2f7d4f; --ok-soft: #e1f1e7; --warn: #a8640a; --warn-soft: #f8ecd3;
+    --bad: #b3261e; --bad-soft: #f9e0de; --paper: #fffdf7; --pen: #3b5fb0;
   }
   @media (prefers-color-scheme: dark) {
     :root {
       --bg: #111216; --surface: #1a1c22; --ink: #eceef2; --muted: #a0a4ae;
-      --line: #2b2e37; --accent: #ff8a4c; --accent-ink: #1a0d05;
+      --line: #2b2e37; --accent: #ff8a4c; --accent-ink: #1a0d05; --soft: #2a1d15;
       --term-bg: #0b0c0f; --term-ink: #d9dbe1; --term-dim: #7d818c;
-      --ok: #6fcf97; --warn: #ff8a4c; --info: #8ab4f8;
+      --ok: #6fcf97; --ok-soft: #16261d; --warn: #f2c46d; --warn-soft: #2a2314;
+      --bad: #ff8a80; --bad-soft: #2c1716; --paper: #23252d; --pen: #8ab4f8;
     }
   }
   * { box-sizing: border-box; }
-  html { -webkit-text-size-adjust: 100%; }
+  html { -webkit-text-size-adjust: 100%; scroll-behavior: smooth; }
   body {
     margin: 0; background: var(--bg); color: var(--ink);
     font: 17px/1.6 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
@@ -32,30 +34,94 @@
   .brand span { color: var(--accent); }
   nav a { color: var(--muted); text-decoration: none; margin-left: 20px; font-size: 15px; }
   nav a:hover { color: var(--ink); }
-  .hero { padding: 56px 0 40px; }
-  h1 { font-size: clamp(34px, 6vw, 58px); line-height: 1.05; letter-spacing: -0.03em; margin: 0 0 18px; text-wrap: balance; }
-  .lede { font-size: clamp(18px, 2.4vw, 21px); color: var(--muted); max-width: 44em; margin: 0 0 28px; }
-  .cta { display: flex; flex-wrap: wrap; gap: 12px; align-items: stretch; }
-  .install {
-    display: flex; align-items: center; gap: 10px; background: var(--term-bg); color: var(--term-ink);
-    border-radius: 10px; padding: 12px 14px; font: 14px/1.4 ui-monospace, "Cascadia Code", Consolas, monospace;
-    max-width: 100%; overflow-x: auto; white-space: nowrap;
+  .hero { padding: 40px 0 26px; }
+  h1 { font-size: clamp(34px, 6vw, 56px); line-height: 1.05; letter-spacing: -0.03em; margin: 0 0 18px; text-wrap: balance; }
+  .lede { font-size: clamp(18px, 2.4vw, 21px); color: var(--muted); max-width: 44em; margin: 0; }
+  h2 { font-size: clamp(24px, 3.4vw, 32px); letter-spacing: -0.02em; line-height: 1.15; margin: 0 0 14px; text-wrap: balance; }
+  h3 { margin: 0 0 8px; font-size: 19px; }
+  p { margin: 0 0 14px; max-width: 46em; }
+  .muted { color: var(--muted); }
+  section { padding: 40px 0; border-top: 1px solid var(--line); }
+  a { color: var(--accent); }
+
+  /* The two views. Radio buttons switch them, so it works without scripts. */
+  .pick { position: absolute; opacity: 0; pointer-events: none; }
+  .switch {
+    display: inline-flex; gap: 6px; padding: 6px; margin: 26px 0 0; border-radius: 14px;
+    background: var(--surface); border: 1px solid var(--line);
   }
-  .install button {
+  .switch label {
+    cursor: pointer; padding: 10px 18px; border-radius: 10px; font-weight: 600; color: var(--muted);
+    display: flex; flex-direction: column; line-height: 1.25; min-width: 132px;
+  }
+  .switch label small { font-weight: 400; font-size: 13px; }
+  #easy:checked ~ .wrap .switch label[for="easy"],
+  #adv:checked ~ .wrap .switch label[for="adv"] { background: var(--accent); color: var(--accent-ink); }
+  #easy:focus-visible ~ .wrap .switch label[for="easy"],
+  #adv:focus-visible ~ .wrap .switch label[for="adv"] { outline: 3px solid var(--pen); outline-offset: 2px; }
+  #easy:checked ~ .wrap .view-adv, #adv:checked ~ .wrap .view-easy { display: none; }
+
+  /* Easy view */
+  .picture {
+    background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 18px; margin-top: 20px;
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 18px;
+  }
+  .picture figure { margin: 0; text-align: center; }
+  .picture figcaption { font-weight: 700; font-size: 19px; margin-bottom: 6px; }
+  .picture svg { width: 100%; max-width: 380px; height: auto; display: block; margin: 0 auto; }
+  .picture p { margin: 8px auto 0; color: var(--muted); font-size: 16px; max-width: 20em; }
+  .cap-good { color: var(--ok); } .cap-bad { color: var(--bad); }
+  .two { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; margin-top: 18px; }
+  .note { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 18px; }
+  .note p { margin: 0; color: var(--muted); font-size: 16px; }
+  ol.steps { list-style: none; padding: 0; margin: 22px 0 0; counter-reset: step; display: grid; grid-template-columns: minmax(0, 1fr); gap: 14px; }
+  ol.steps > li {
+    counter-increment: step; position: relative; background: var(--surface); border: 1px solid var(--line);
+    border-radius: 14px; padding: 20px 20px 20px 78px; min-height: 84px;
+  }
+  ol.steps > li::before {
+    content: counter(step); position: absolute; left: 18px; top: 18px; width: 44px; height: 44px; border-radius: 50%;
+    background: var(--accent); color: var(--accent-ink); font-weight: 700; font-size: 20px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  ol.steps p { margin: 0 0 8px; }
+  ol.steps p:last-child { margin-bottom: 0; }
+  .tip { font-size: 15px; color: var(--muted); }
+  kbd {
+    font: 600 0.85em ui-monospace, Consolas, monospace; background: var(--bg); border: 1px solid var(--line);
+    border-bottom-width: 3px; border-radius: 6px; padding: 1px 7px; white-space: nowrap;
+  }
+  .type {
+    display: flex; align-items: center; gap: 10px; background: var(--term-bg); color: var(--term-ink);
+    border-radius: 10px; padding: 11px 13px; margin: 8px 0; max-width: 100%;
+    font: 14px/1.4 ui-monospace, "Cascadia Code", Consolas, monospace;
+  }
+  .type { min-width: 0; }
+  .type span { overflow-x: auto; white-space: nowrap; flex: 1; min-width: 0; }
+  .type button {
     font: inherit; color: var(--term-dim); background: none; border: 1px solid #353944;
     border-radius: 6px; padding: 3px 9px; cursor: pointer; flex: none;
   }
-  .install button:hover { color: var(--term-ink); }
+  .type button:hover { color: var(--term-ink); }
+  .results { display: grid; gap: 12px; margin-top: 20px; }
+  .result { border-radius: 14px; padding: 16px 18px; border: 1px solid var(--line); display: grid; grid-template-columns: auto 1fr; gap: 4px 16px; align-items: start; }
+  .result .face { grid-row: span 2; width: 42px; height: 42px; }
+  .result b { font: 700 14px/1.3 ui-monospace, Consolas, monospace; letter-spacing: 0.02em; }
+  .result p { margin: 0; font-size: 16px; }
+  .good { background: var(--ok-soft); } .good b { color: var(--ok); }
+  .care { background: var(--warn-soft); } .care b { color: var(--warn); }
+  .act { background: var(--bad-soft); } .act b { color: var(--bad); }
+  .callout { background: var(--soft); border-radius: 14px; padding: 18px 20px; margin-top: 20px; }
+  .callout p { margin: 0; }
+
+  /* Advanced view */
+  .cta { display: flex; flex-wrap: wrap; gap: 12px; align-items: stretch; margin-top: 8px; }
   .btn {
     display: inline-flex; align-items: center; padding: 12px 18px; border-radius: 10px;
     background: var(--accent); color: var(--accent-ink); font-weight: 600; text-decoration: none;
   }
-  .facts { display: flex; flex-wrap: wrap; gap: 8px 22px; margin: 26px 0 0; padding: 0; list-style: none; color: var(--muted); font-size: 15px; }
+  .facts { display: flex; flex-wrap: wrap; gap: 8px 22px; margin: 22px 0 0; padding: 0; list-style: none; color: var(--muted); font-size: 15px; }
   .facts li::before { content: "\2713"; color: var(--ok); margin-right: 7px; }
-  section { padding: 44px 0; border-top: 1px solid var(--line); }
-  h2 { font-size: clamp(24px, 3.4vw, 32px); letter-spacing: -0.02em; line-height: 1.15; margin: 0 0 14px; text-wrap: balance; }
-  p { margin: 0 0 14px; max-width: 46em; }
-  .muted { color: var(--muted); }
   .term {
     background: var(--term-bg); color: var(--term-ink); border-radius: 12px; padding: 18px 20px;
     font: 13.5px/1.6 ui-monospace, "Cascadia Code", Consolas, monospace; overflow-x: auto; margin: 18px 0 0;
@@ -64,7 +130,6 @@
   .dim { color: var(--term-dim); } .hot { color: #ff8a4c; font-weight: 600; } .calm { color: #6fcf97; font-weight: 600; }
   .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 16px; margin-top: 22px; }
   .card { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 20px; }
-  .card h3 { margin: 0 0 8px; font-size: 18px; }
   .card p { margin: 0; color: var(--muted); font-size: 16px; }
   .num { font: 700 13px/1 ui-monospace, Consolas, monospace; color: var(--accent); display: block; margin-bottom: 10px; }
   table { border-collapse: collapse; width: 100%; margin-top: 18px; font-size: 16px; }
@@ -75,10 +140,16 @@
   ul.plain { padding-left: 20px; margin: 0; max-width: 46em; }
   ul.plain li { margin-bottom: 8px; }
   footer { padding: 34px 0 50px; border-top: 1px solid var(--line); color: var(--muted); font-size: 15px; }
-  footer a, section a { color: var(--accent); }
+  @media (max-width: 520px) {
+    ol.steps > li { padding: 74px 16px 18px 16px; }
+    .switch { display: flex; }
+    .switch label { flex: 1; min-width: 0; padding: 10px 12px; }
+  }
 </style>
 </head>
 <body>
+<input class="pick" type="radio" name="view" id="easy" checked>
+<input class="pick" type="radio" name="view" id="adv">
 <div class="wrap">
   <header>
     <div class="brand">write<span>hawk</span></div>
@@ -90,24 +161,157 @@
 
   <div class="hero">
     <h1>Find the program that is quietly wearing out your SSD.</h1>
-    <p class="lede">Some software rewrites the same small file thousands of times an hour. Task Manager shows nothing alarming while the drive absorbs gigabytes a day. writehawk finds the loop, tells you whether a known driver bug applies to your machine, and can apply a workaround you can undo.</p>
-    <div class="cta">
-      <div class="install"><span id="cmd">python -m pip install git+https://github.com/BiosSystem/writehawk</span><button type="button" id="copy">copy</button></div>
-      <a class="btn" href="https://github.com/BiosSystem/writehawk">View on GitHub</a>
+    <p class="lede">Some programs write the same small file over and over, thousands of times an hour. Nothing looks wrong, but the drive inside your PC gets used up faster than it should. writehawk finds that, for free.</p>
+    <div class="switch" role="group" aria-label="Choose a guide">
+      <label for="easy">Easy guide<small>step by step, no experience needed</small></label>
+      <label for="adv">Advanced<small>commands and details</small></label>
     </div>
-    <ul class="facts">
-      <li>Windows 10 and 11</li>
-      <li>Free and open source, MIT</li>
-      <li>No driver, no background service</li>
-      <li>No network access</li>
-      <li>Changes nothing unless you ask</li>
-    </ul>
   </div>
 
-  <section>
-    <h2>One command, no administrator rights</h2>
-    <p class="muted">Run <code>writehawk scan</code>. For every cause it knows, it says whether you have the hardware, whether your driver has the fix, and whether the writes are happening right now.</p>
-    <div class="term"><pre><span class="dim">&gt;</span> writehawk scan
+  <!-- ============================== EASY ============================== -->
+  <div class="view-easy">
+    <section>
+      <h2>What is the problem?</h2>
+      <p>The drive in your computer (the SSD) is like a notebook. Every spot on the page can only be written and erased so many times before it wears thin. That is normal, and a healthy PC takes many years to get there.</p>
+      <p>A buggy program can get stuck writing the same note in the same spot, again and again, all day. You cannot see it or hear it. That is the thing writehawk looks for.</p>
+      <div class="picture">
+        <figure>
+          <figcaption class="cap-good">A normal program</figcaption>
+          <svg viewBox="0 0 340 210" role="img" aria-label="A page with a few neat lines of writing">
+            <rect x="20" y="10" width="300" height="190" rx="10" fill="var(--paper)" stroke="var(--line)" stroke-width="2"/>
+            <g stroke="var(--pen)" stroke-width="5" stroke-linecap="round">
+              <line x1="46" y1="44" x2="290" y2="44"/><line x1="46" y1="74" x2="260" y2="74"/>
+              <line x1="46" y1="104" x2="280" y2="104"/><line x1="46" y1="134" x2="210" y2="134"/>
+            </g>
+            <line x1="46" y1="164" x2="290" y2="164" stroke="var(--line)" stroke-width="3" stroke-linecap="round" stroke-dasharray="2 10"/>
+          </svg>
+          <p>Writes a little, in new places. The page lasts for years.</p>
+        </figure>
+        <figure>
+          <figcaption class="cap-bad">A stuck program</figcaption>
+          <svg viewBox="0 0 340 210" role="img" aria-label="A page where one spot has been scribbled over until it is worn">
+            <rect x="20" y="10" width="300" height="190" rx="10" fill="var(--paper)" stroke="var(--line)" stroke-width="2"/>
+            <g stroke="var(--line)" stroke-width="3" stroke-linecap="round" stroke-dasharray="2 10">
+              <line x1="46" y1="44" x2="290" y2="44"/><line x1="46" y1="164" x2="290" y2="164"/>
+            </g>
+            <ellipse cx="170" cy="104" rx="92" ry="34" fill="var(--bad-soft)" stroke="var(--bad)" stroke-width="2" stroke-dasharray="5 5"/>
+            <g stroke="var(--bad)" stroke-width="5" stroke-linecap="round" fill="none">
+              <path d="M100 94 q20 -14 40 0 t40 0 t40 0 t20 0"/>
+              <path d="M98 104 q20 14 40 0 t40 0 t40 0 t24 0"/>
+              <path d="M102 114 q20 -14 40 0 t40 0 t40 0 t18 0"/>
+              <path d="M106 99 q18 12 36 0 t36 0 t36 0 t22 0"/>
+              <path d="M104 109 q18 -12 36 0 t36 0 t36 0 t24 0"/>
+            </g>
+          </svg>
+          <p>Writes the same spot all day. That spot wears out early.</p>
+        </figure>
+      </div>
+      <div class="two">
+        <div class="note"><h3>Is this real?</h3><p>Yes. In November 2026 it was reported for graphics card software from both NVIDIA and AMD. Both companies have released fixes since.</p></div>
+        <div class="note"><h3>Is my PC broken?</h3><p>Almost certainly not. This is about wear over months, not sudden damage. It is worth a five minute check, not a panic.</p></div>
+        <div class="note"><h3>Is writehawk safe?</h3><p>The check only looks. It changes nothing on your PC, sends nothing to the internet, and never reads what is inside your files.</p></div>
+      </div>
+    </section>
+
+    <section>
+      <h2>Check your PC in 5 steps</h2>
+      <p class="muted">About five minutes. You need a Windows 10 or Windows 11 PC and an internet connection.</p>
+      <div class="callout"><p><b>Under 18, or not your own PC?</b> Ask the adult who looks after the computer before you install anything. Show them this page.</p></div>
+      <ol class="steps">
+        <li>
+          <h3>Open the Terminal</h3>
+          <p>Press the <kbd>Windows</kbd> key, type <kbd>terminal</kbd>, and press <kbd>Enter</kbd>. A dark window with a blinking cursor opens. That is where you will type.</p>
+          <p class="tip">No "Terminal" on Windows 10? Type <kbd>powershell</kbd> instead. It works the same way.</p>
+        </li>
+        <li>
+          <h3>Get Python</h3>
+          <p>writehawk is written in a language called Python, so the PC needs Python first. Type this and press <kbd>Enter</kbd>:</p>
+          <div class="type"><span>python</span><button type="button">copy</button></div>
+          <p>If the Microsoft Store opens, click <b>Get</b> and wait until it finishes. Then close the Terminal and open it again (step 1).</p>
+          <p class="tip">If you see <code>&gt;&gt;&gt;</code> instead, Python is already there. Type <kbd>exit()</kbd> and press <kbd>Enter</kbd>.</p>
+        </li>
+        <li>
+          <h3>Install writehawk</h3>
+          <p>Copy this line, paste it into the Terminal (right-click pastes), and press <kbd>Enter</kbd>:</p>
+          <div class="type"><span>python -m pip install https://github.com/BiosSystem/writehawk/archive/refs/heads/master.zip</span><button type="button">copy</button></div>
+          <p class="tip">Wait until you see "Successfully installed writehawk". It takes under a minute.</p>
+        </li>
+        <li>
+          <h3>Run the check</h3>
+          <p>Type this and press <kbd>Enter</kbd>, then wait about 20 seconds:</p>
+          <div class="type"><span>python -m writehawk scan</span><button type="button">copy</button></div>
+        </li>
+        <li>
+          <h3>Read the answer</h3>
+          <p>You will see a few lines for each known problem. Look for the word in CAPITAL LETTERS at the end of the first line, and find it in the list below.</p>
+        </li>
+      </ol>
+    </section>
+
+    <section>
+      <h2>What the answer means</h2>
+      <div class="results">
+        <div class="result good">
+          <svg class="face" viewBox="0 0 42 42" aria-hidden="true"><circle cx="21" cy="21" r="19" fill="none" stroke="var(--ok)" stroke-width="3"/><path d="M12 22l6 6 12-13" fill="none" stroke="var(--ok)" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <b>NOT APPLICABLE &nbsp;&middot;&nbsp; FIXED &nbsp;&middot;&nbsp; NOT AFFECTED</b>
+          <p>You are fine. Either your PC does not have that kind of graphics card, or its software already has the fix. Nothing to do.</p>
+        </div>
+        <div class="result good">
+          <svg class="face" viewBox="0 0 42 42" aria-hidden="true"><circle cx="21" cy="21" r="19" fill="none" stroke="var(--ok)" stroke-width="3"/><path d="M21 9l10 4v8c0 6-4 10-10 12-6-2-10-6-10-12v-8z" fill="none" stroke="var(--ok)" stroke-width="3" stroke-linejoin="round"/></svg>
+          <b>MITIGATED</b>
+          <p>Your software still has the bug, but someone has already switched off the part that causes it. You are protected. Updating the graphics driver is still a good idea.</p>
+        </div>
+        <div class="result care">
+          <svg class="face" viewBox="0 0 42 42" aria-hidden="true"><path d="M21 4l18 32H3z" fill="none" stroke="var(--warn)" stroke-width="3" stroke-linejoin="round"/><path d="M21 16v10" stroke="var(--warn)" stroke-width="4" stroke-linecap="round"/><circle cx="21" cy="31" r="2.2" fill="var(--warn)"/></svg>
+          <b>EXPOSED &nbsp;&middot;&nbsp; VERSION UNKNOWN</b>
+          <p>Your graphics software is a version that has the bug. It was not seen writing during the check, but it can start. Update the graphics driver (see below).</p>
+        </div>
+        <div class="result act">
+          <svg class="face" viewBox="0 0 42 42" aria-hidden="true"><circle cx="21" cy="21" r="19" fill="none" stroke="var(--bad)" stroke-width="3"/><path d="M21 10v13" stroke="var(--bad)" stroke-width="4" stroke-linecap="round"/><circle cx="21" cy="30" r="2.4" fill="var(--bad)"/></svg>
+          <b>ACTIVE</b>
+          <p>It is happening right now. Update the graphics driver today. Your files are safe; this is about wear, not about losing data.</p>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>How to fix it</h2>
+      <p>The real fix is a newer graphics driver from the company that made your graphics card. writehawk tells you which company and which version in its answer.</p>
+      <div class="two">
+        <div class="note"><h3>NVIDIA (GeForce)</h3><p>Get the newest driver from <a href="https://www.nvidia.com/en-us/drivers/">nvidia.com/drivers</a>. The fix first came as a separate "hotfix" download, which is why the normal update button may not have offered it.</p></div>
+        <div class="note"><h3>AMD (Radeon)</h3><p>Get the newest driver from <a href="https://www.amd.com/en/support/download/drivers.html">amd.com/support</a>. Choose the newest version, even if it is marked "Optional".</p></div>
+      </div>
+      <p style="margin-top:18px">After updating and restarting, run step 4 again. The answer should now say <b>FIXED</b>.</p>
+      <div class="callout"><p><b>Cannot update right now?</b> writehawk can switch off the faulty part for you and switch it back on later. That needs an administrator and a little more care, so it lives in the <label for="adv" style="color:var(--accent);text-decoration:underline;cursor:pointer">Advanced guide</label>.</p></div>
+    </section>
+
+    <section>
+      <h2>Questions people ask</h2>
+      <div class="two">
+        <div class="note"><h3>It says "python is not recognized"</h3><p>Python is not installed yet, or the Terminal was open while it installed. Do step 2 again, then close the Terminal and open a new one.</p></div>
+        <div class="note"><h3>Does it cost anything?</h3><p>No. It is free and open source. Anyone can read the code.</p></div>
+        <div class="note"><h3>How do I remove it?</h3><p>Type <code>python -m pip uninstall writehawk</code> in the Terminal. The check itself leaves nothing behind.</p></div>
+        <div class="note"><h3>I do not have NVIDIA or AMD</h3><p>Then the two known problems cannot affect you, and the check will say so.</p></div>
+      </div>
+    </section>
+  </div>
+
+  <!-- ============================ ADVANCED ============================ -->
+  <div class="view-adv">
+    <section>
+      <h2>Install and scan</h2>
+      <div class="type"><span>python -m pip install https://github.com/BiosSystem/writehawk/archive/refs/heads/master.zip</span><button type="button">copy</button></div>
+      <div class="cta"><a class="btn" href="https://github.com/BiosSystem/writehawk">View on GitHub</a></div>
+      <ul class="facts">
+        <li>Windows 10 and 11, 64-bit</li>
+        <li>Python 3.11 or newer, nothing else</li>
+        <li>MIT license</li>
+        <li>No driver, no background service</li>
+        <li>No network access</li>
+        <li>Read-only unless you pass <code>--apply</code></li>
+      </ul>
+      <p class="muted" style="margin-top:22px"><code>writehawk scan</code> needs no administrator rights. For every cause it knows, it says whether you have the hardware, whether your driver has the fix, and whether the writes are happening now.</p>
+      <div class="term"><pre><span class="dim">&gt;</span> writehawk scan
 
 nvidia-nvtopps-log-rewrite: <span class="hot">EXPOSED</span>
   NVIDIA display container rewrites its log file without pause
@@ -118,54 +322,71 @@ nvidia-nvtopps-log-rewrite: <span class="hot">EXPOSED</span>
 
 amd-eeu-dump-files: <span class="calm">NOT APPLICABLE</span>
   no amd display adapter in this machine</pre></div>
-  </section>
+      <p class="muted" style="margin-top:16px">From an administrator terminal the scan also traces file writes for its duration, measures the loop, and lists rewrite loops that no known cause explains.</p>
+    </section>
 
-  <section>
-    <h2>What it does</h2>
-    <div class="grid">
-      <div class="card"><span class="num">01 MEASURE</span><h3>Sees rewrites, not just bytes</h3><p>Counts how often each file is written over the same bytes, and how much of that is flushed to the drive. That separates a harmless loop from a harmful one.</p></div>
-      <div class="card"><span class="num">02 EXPLAIN</span><h3>Names the cause</h3><p>Matches what it sees against a catalog of known bugs, each with its sources, and tells you which driver version fixes it and why that version may not have reached you.</p></div>
-      <div class="card"><span class="num">03 ACT</span><h3>Fixes, with an undo</h3><p>Shows the exact registry values a workaround would change. Applies them only with <code>--apply</code>, after recording the prior state, and <code>rollback</code> puts everything back.</p></div>
-    </div>
-  </section>
+    <section>
+      <h2>What it does</h2>
+      <div class="grid">
+        <div class="card"><span class="num">01 MEASURE</span><h3>Sees rewrites, not just bytes</h3><p>Counts how often each file is written over the same bytes, and how much of that is flushed to the drive. That separates a harmless loop from a harmful one.</p></div>
+        <div class="card"><span class="num">02 EXPLAIN</span><h3>Names the cause</h3><p>Matches what it sees against a catalog of known bugs, each with its sources, and tells you which driver version fixes it and why that version may not have reached you.</p></div>
+        <div class="card"><span class="num">03 ACT</span><h3>Fixes, with an undo</h3><p>Shows the exact registry values a workaround would change. Applies them only with <code>--apply</code>, after recording the prior state, and <code>rollback</code> puts everything back.</p></div>
+      </div>
+    </section>
 
-  <section>
-    <h2>Known causes today</h2>
-    <div class="scroll">
-    <table>
-      <tr><th>Cause</th><th>What it writes</th><th>Fixed by the vendor in</th></tr>
-      <tr><td>NVIDIA display container</td><td>One log file, <code>nvlog.nvlgstg</code>, over and over</td><td>Hotfix driver 621.35</td></tr>
-      <tr><td>AMD External Events Utility</td><td>Rotating files in an <code>EeuDumps</code> folder while idle</td><td>Adrenalin 26.11.1 and 26.11.2, depending on the card</td></tr>
-    </table>
-    </div>
-    <p class="muted" style="margin-top:16px">Run as administrator, the scan also lists heavy rewrite loops that no known cause explains. Those are reported and never acted on.</p>
-  </section>
+    <section>
+      <h2>Commands</h2>
+      <div class="term"><pre>writehawk scan                  <span class="dim"># known causes: affected, fixed, mitigated or writing now</span>
+writehawk top --seconds 5       <span class="dim"># processes ranked by write rate</span>
+writehawk trace --seconds 15    <span class="dim"># files by bytes written and rewrite ratio (administrator)</span>
+writehawk context               <span class="dim"># display adapters, volumes, idle state, protected processes</span>
+writehawk fix &lt;rule&gt;            <span class="dim"># show what a workaround would change; --apply to do it</span>
+writehawk rollback              <span class="dim"># undo the newest change from its record</span>
+writehawk status                <span class="dim"># changes this tool made and whether they still hold</span>
+writehawk report --out r.json   <span class="dim"># everything as JSON, for a bug report or a script</span>
+writehawk watch install         <span class="dim"># scheduled task that writes the report</span></pre></div>
+    </section>
 
-  <section>
-    <h2>Why the fix did not just arrive</h2>
-    <p>A vendor publishing a fix and your machine receiving it are separate events. A hotfix driver may be a manual download only. A fix may ship in an optional release while an older one stays recommended. A driver that came from Windows Update or the PC maker is not replaced by the vendor's own releases. writehawk checks which of these applies to your machine and says so.</p>
-  </section>
+    <section>
+      <h2>Apply a workaround, and undo it</h2>
+      <div class="term"><pre>writehawk fix nvidia-nvtopps-log-rewrite            <span class="dim"># prints the change, does nothing</span>
+writehawk fix nvidia-nvtopps-log-rewrite --apply    <span class="dim"># administrator terminal</span>
+writehawk rollback --apply                          <span class="dim"># puts everything back</span></pre></div>
+      <ul class="plain" style="margin-top:18px">
+        <li>A workaround is a short list of registry values. A catalog entry cannot run a command.</li>
+        <li>The prior state of every value is on disk before anything is changed, and undo works from that record alone.</li>
+        <li>Undo never overwrites a value that something else has changed since, unless you pass <code>--force</code>.</li>
+        <li>A workaround with a side effect is offered only where the side effect cannot bite.</li>
+        <li>The vendor's fixed driver is always the better answer. A workaround is for the time until you have it.</li>
+      </ul>
+    </section>
 
-  <section>
-    <h2>Built to be safe to run</h2>
-    <ul class="plain">
-      <li>Everything is read-only until you pass <code>--apply</code> from an administrator terminal.</li>
-      <li>A catalog entry can only describe registry values. It cannot run a command.</li>
-      <li>The record of a change is on disk before the change is made, and undo works from that record alone.</li>
-      <li>Undo never overwrites a value that something else has changed since, unless you tell it to.</li>
-      <li>No file content is read and nothing leaves the machine.</li>
-    </ul>
-  </section>
+    <section>
+      <h2>Known causes today</h2>
+      <div class="scroll">
+      <table>
+        <tr><th>Cause</th><th>What it writes</th><th>Fixed by the vendor in</th></tr>
+        <tr><td>NVIDIA display container</td><td>One log file, <code>nvlog.nvlgstg</code>, over and over</td><td>Hotfix driver 621.35</td></tr>
+        <tr><td>AMD External Events Utility</td><td>Rotating files in an <code>EeuDumps</code> folder while idle</td><td>Adrenalin 26.11.1 and 26.11.2, depending on the card</td></tr>
+      </table>
+      </div>
+    </section>
 
-  <section>
-    <h2>Honest limits</h2>
-    <ul class="plain">
-      <li>It is early software. It is tested on Windows 11; Windows 10 has not been run yet.</li>
-      <li>The two rules were checked against a replay of their write pattern, because the real bugs cannot be produced on demand.</li>
-      <li>The vendor's fixed driver is always the better answer. A workaround is for the time until you have it.</li>
-    </ul>
-    <p style="margin-top:16px">Everything that was and was not verified is written down in the <a href="https://github.com/BiosSystem/writehawk/blob/master/docs/RESEARCH.md">research notes</a>.</p>
-  </section>
+    <section>
+      <h2>Why the fix did not just arrive</h2>
+      <p>A vendor publishing a fix and your machine receiving it are separate events. A hotfix driver may be a manual download only. A fix may ship in an optional release while an older one stays recommended. A driver that came from Windows Update or the PC maker is not replaced by the vendor's own releases. writehawk checks which of these applies to your machine and says so.</p>
+    </section>
+
+    <section>
+      <h2>Honest limits</h2>
+      <ul class="plain">
+        <li>It is early software. It is tested on Windows 11 and on Windows Server 2022, whose core is from the Windows 10 line. A Windows 10 desktop itself has not been run yet.</li>
+        <li>The two rules were checked against a replay of their write pattern, because the real bugs cannot be produced on demand.</li>
+        <li>Applying and undoing was verified on a scratch registry key and service in a disposable machine, not on a vendor's own service.</li>
+      </ul>
+      <p style="margin-top:16px">Everything that was and was not verified is written down in the <a href="https://github.com/BiosSystem/writehawk/blob/master/docs/RESEARCH.md">research notes</a>.</p>
+    </section>
+  </div>
 
   <footer>
     writehawk is free software under the MIT license. It is not affiliated with NVIDIA, AMD or Microsoft.
@@ -174,13 +395,33 @@ amd-eeu-dump-files: <span class="calm">NOT APPLICABLE</span>
   </footer>
 </div>
 <script>
-  document.getElementById("copy").addEventListener("click", function () {
-    var button = this;
-    navigator.clipboard.writeText(document.getElementById("cmd").textContent).then(function () {
-      button.textContent = "copied";
-      setTimeout(function () { button.textContent = "copy"; }, 1500);
+  (function () {
+    document.querySelectorAll(".type button").forEach(function (button) {
+      button.addEventListener("click", function () {
+        var text = button.parentNode.querySelector("span").textContent;
+        if (!navigator.clipboard) { return; }
+        navigator.clipboard.writeText(text).then(function () {
+          button.textContent = "copied";
+          setTimeout(function () { button.textContent = "copy"; }, 1500);
+        });
+      });
     });
-  });
+    // Remember the chosen guide. The page works the same without this.
+    var views = ["easy", "adv"];
+    try {
+      var saved = localStorage.getItem("writehawk-view");
+      if (location.hash === "#advanced") { saved = "adv"; }
+      if (location.hash === "#easy") { saved = "easy"; }
+      if (views.indexOf(saved) >= 0) { document.getElementById(saved).checked = true; }
+    } catch (ignored) {}
+    views.forEach(function (id) {
+      document.getElementById(id).addEventListener("change", function () {
+        try { localStorage.setItem("writehawk-view", id); } catch (ignored) {}
+        // The two guides differ in length, so start the new one from its top.
+        document.querySelector(".switch").scrollIntoView({ block: "start" });
+      });
+    });
+  })();
 </script>
 </body>
 </html>
