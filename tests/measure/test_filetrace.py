@@ -221,7 +221,6 @@ def test_live_trace_sees_a_rewrite_loop(tmp_path):
     tracker = RewriteTracker()
     path = tmp_path / "loop.bin"
     with ft.FileTrace(tracker, session="writehawk-test") as trace:
-        time.sleep(0.5)
         fd = os.open(path, os.O_RDWR | os.O_CREAT | os.O_BINARY)
         for _ in range(300):
             os.lseek(fd, 0, os.SEEK_SET)
@@ -240,7 +239,6 @@ def test_live_flush_and_append_are_not_double_counted(tmp_path):
         pytest.skip("needs elevation to start a trace session")
     tracker = RewriteTracker()
     with ft.FileTrace(tracker, session="writehawk-test") as trace:
-        time.sleep(0.5)
         fd = os.open(tmp_path / "flushed.bin", os.O_RDWR | os.O_CREAT | os.O_BINARY)
         for _ in range(100):
             os.lseek(fd, 0, os.SEEK_SET)
@@ -271,7 +269,6 @@ def test_live_trace_names_a_file_opened_before_it_started(tmp_path):
     os.write(fd, b"x" * 4096)
     tracker = RewriteTracker()
     with ft.FileTrace(tracker, session="writehawk-test") as trace:
-        time.sleep(0.5)
         for _ in range(50):
             os.lseek(fd, 0, os.SEEK_SET)
             os.write(fd, b"x" * 4096)
@@ -304,7 +301,6 @@ def test_live_trace_names_a_file_held_open_by_another_process(tmp_path):
         writer = int(writer)
         tracker = RewriteTracker()
         with ft.FileTrace(tracker, session="writehawk-test") as trace:
-            time.sleep(0.5)
             child.stdin.write("go\n")
             child.stdin.flush()
             assert child.stdout.readline().strip() == "written"
@@ -380,7 +376,6 @@ def test_sandbox_trace_names_a_file_held_open_by_a_system_process(tmp_path):
                 deliver(pid, event_id, version, data)
 
             trace.on_event = spy
-            time.sleep(0.5)
             (tmp_path / "go").touch()
             assert _wait_for(tmp_path / "written")
             trace.resolve_names()  # straight after the writes: relies on flush

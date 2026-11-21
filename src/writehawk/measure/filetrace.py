@@ -27,7 +27,10 @@ Payload layouts come from the provider manifest (versions 0 and 1 of each event)
 from __future__ import annotations
 
 import ctypes
+import os
+import shutil
 import struct
+import tempfile
 import threading
 import time
 import uuid
@@ -64,6 +67,8 @@ TRACE_LEVEL_INFORMATION = 4
 EVENT_HEADER_FLAG_32_BIT_HEADER = 0x20
 INVALID_TRACE_HANDLE = 0xFFFFFFFFFFFFFFFF
 MAX_OBJECT_NAMES = 200_000
+# What start() writes to prove the session is live: an odd size, easy to tell apart.
+MARKER = b"writehawk-ready!!"
 
 
 # ---- payload parsing (pure, 64-bit pointers) --------------------------------
@@ -253,6 +258,7 @@ class FileTrace:
         self.events = 0
         self.errors = 0
         self.retries = 0
+        self.ready = False  # set by start() once a write of its own came through
         self._last_stamp = 0
         self._flush_mark = 0       # events stamped before this are what flush waits for
         self._late_arrival = 0.0   # when one of those last reached the callback
@@ -402,6 +408,59 @@ class FileTrace:
             raise
         self._thread = threading.Thread(target=self._pump, name="writehawk-etw", daemon=True)
         self._thread.start()
+        self.ready = self._wait_ready()
+
+    def _wait_ready(self, timeout: float = 10.0) -> bool:
+        """Return once the session delivers events, proven with a write of our own.
+
+        Enabling the provider takes effect a moment after the call returns. Seen
+        on Windows Server: writes made at once were missed. The marker file is
+        written in a new temp folder, dropped from the totals and deleted.
+        """
+        folder = tempfile.mkdtemp(prefix="writehawk-ready-")
+        path = os.path.join(folder, "marker")
+        # The trace reports long names; a temp folder can be given in its short
+        # 8.3 form (seen on Windows Server), so compare the resolved path.
+        wanted = os.path.normcase(os.path.realpath(path))
+        mine = os.getpid()
+        deadline = time.monotonic() + timeout
+        seen: list[int] = []
+        try:
+            while not seen and time.monotonic() < deadline:
+                # A fresh open each round, so a create event names the file even
+                # when the first ones were missed.
+                fd = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_BINARY)
+                try:
+                    os.write(fd, MARKER)
+                finally:
+                    os.close(fd)
+                self.flush(timeout=0.5, quiet=0.05)
+                with self.lock:
+                    seen = [f.file_id for f in self.tracker.files.values()
+                            if f.pid == mine and self._is_marker(f, wanted)]
+        finally:
+            with self.lock:
+                for file_id in {f.file_id for f in self.tracker.files.values()
+                                if f.pid == mine and self._is_marker(f, wanted)}:
+                    self.tracker.forget(file_id)
+                    self.name_sources.pop(file_id, None)
+            shutil.rmtree(folder, ignore_errors=True)
+        return bool(seen)
+
+    def _is_marker(self, entry, wanted: str) -> bool:
+        """By name, or by its odd write size, whatever name it was given."""
+        name = self.tracker.name_of(entry.file_id)
+        if name is not None and os.path.normcase(name) == wanted:
+            return True
+        return entry.writes > 0 and entry.bytes_written == entry.writes * len(MARKER)
+
+    def own_files(self, limit: int = 3) -> list[str]:
+        """What this process was seen writing, for a diagnostic message."""
+        mine = os.getpid()
+        with self.lock:
+            rows = [f for f in self.tracker.files.values() if f.pid == mine][:limit]
+            return [f"{self.tracker.name_of(f.file_id) or '(unnamed)'}: {f.writes} writes, "
+                    f"{f.bytes_written} bytes" for f in rows]
 
     def _pump(self) -> None:
         self._lib.ProcessTrace(ctypes.byref(self._trace_handle), 1, None, None)

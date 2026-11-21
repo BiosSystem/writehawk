@@ -152,9 +152,15 @@ def _rewrite(fd: int, times: int) -> None:
 def _file_trace() -> str:
     _need_elevation()
     with tempfile.TemporaryDirectory(prefix="writehawk-selftest-") as folder:
-        path = os.path.join(folder, "loop.bin")
+        # realpath: the trace reports long names, and TEMP can be a short 8.3 path.
+        path = os.path.realpath(os.path.join(folder, "loop.bin"))
         tracker = RewriteTracker()
         with FileTrace(tracker, session="writehawk-selftest") as trace:
+            if not trace.ready:
+                raise RuntimeError(f"the trace started but its own test write did not come "
+                                   f"through within 10 s ({trace.events} events, "
+                                   f"{trace.errors} errors; own writes seen: "
+                                   f"{trace.own_files() or 'none'})")
             fd = os.open(path, os.O_RDWR | os.O_CREAT | os.O_BINARY)
             try:
                 _rewrite(fd, 50)
@@ -176,7 +182,7 @@ def _file_trace() -> str:
 def _handle_naming() -> str:
     _need_elevation()
     with tempfile.TemporaryDirectory(prefix="writehawk-selftest-") as folder:
-        path = os.path.join(folder, "early.bin")
+        path = os.path.realpath(os.path.join(folder, "early.bin"))
         fd = os.open(path, os.O_RDWR | os.O_CREAT | os.O_BINARY)
         try:
             os.write(fd, b"w" * 4096)

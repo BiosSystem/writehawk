@@ -55,3 +55,16 @@ def test_tracker_keeps_processes_apart_and_ranks_by_bytes():
     assert [(f.pid, f.bytes_written) for f in top] == [(11, 200), (10, 100)]
     assert t.name_of(7) == r"C:\x.log"
     assert t.top(min_bytes=150) == [top[0]]
+
+
+def test_forget_drops_every_total_of_one_file():
+    tracker = RewriteTracker()
+    tracker.add_write(1, 7, 0, 10)
+    tracker.add_write(2, 7, 0, 10)
+    tracker.add_write(1, 8, 0, 10)
+    tracker.add_flush(7, 10)
+    tracker.set_name(7, "marker")
+    tracker.forget(7)
+    assert [entry.file_id for entry in tracker.files.values()] == [8]
+    assert tracker.flushed_bytes(7) == 0
+    assert tracker.name_of(7) is None

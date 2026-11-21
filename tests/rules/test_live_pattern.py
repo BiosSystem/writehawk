@@ -8,7 +8,6 @@ import os
 import shutil
 import subprocess
 import sys
-import time
 
 import pytest
 
@@ -53,7 +52,6 @@ def test_sandbox_the_nvidia_rule_matches_its_write_pattern():
         before = ev.snapshot_files(rule)
         tracker = RewriteTracker()
         with ft.FileTrace(tracker, session="writehawk-test") as trace:
-            time.sleep(0.3)
             subprocess.run([sys.executable, "-c", WRITER, log], check=True)
             trace.resolve_names()
         traced = ev.trace_activity(rule, tracker)
