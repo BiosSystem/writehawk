@@ -3,6 +3,28 @@
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 Versions follow [Semantic Versioning](https://semver.org/).
 
+## [0.2.0] - 2026-11-22
+
+### Added
+
+- Cross-platform Linux and Network Attached Storage (NAS) support (UGREEN UGOS Pro, Synology DSM, TrueNAS SCALE, Unraid, QNAP QTS, Debian/Ubuntu, Arch, Fedora).
+- Linux `/proc/<pid>/stat` and `/proc/<pid>/io` reader measuring process-level VFS I/O (`rchar`, `wchar`) and physical storage bytes (`read_bytes`, `write_bytes`, `cancelled_write_bytes`).
+- Linux `/proc/diskstats` and `/proc/mounts` metrics parser tracking physical sector writes and discard (TRIM) operations.
+- Linux `/proc/<pid>/fd` descriptor crawler resolving active file paths via `os.readlink`.
+- Cross-platform file tracing engine using `/proc/<pid>/io` sampling and non-blocking in-process I/O hooks.
+- NAS OS distribution detection in `context.drivers`: recognizes UGREEN UGOS Pro, Synology DSM, Unraid OS, QNAP QTS, TrueNAS, and standard Linux distributions.
+- Subsystem diagnostic rules for Linux and NAS storage workloads:
+  - `linux-btrfs-sqlite-nocow`: Diagnoses SQLite databases and WAL files on Btrfs copy-on-write mounts missing `NOCOW` (`nodatacow` / `chattr +C`), preventing high write amplification.
+  - `linux-docker-json-log-limit`: Checks Docker daemon configuration for unbounded JSON container logging (`max-size`, `max-file`).
+  - `linux-journald-flash-cap`: Inspects `systemd-journald` configuration to prevent excessive persistent index and log rewrites to flash boot SSDs.
+  - `linux-ssd-swappiness`: Identifies aggressive kernel `vm.swappiness >= 60` on SSD/NVMe root pools and provides wear-reducing configurations.
+- Linux `/etc` configuration management:
+  - Registry adapter maps `HKLM\LINUX\...` paths to drop-ins in `/etc/sysctl.d`, `/etc/docker/daemon.json`, `/etc/systemd/journald.conf.d`, and `/etc/writehawk`.
+  - Service management via `systemctl` (`is-enabled`, `enable`, `disable`, `start`, `stop`).
+  - Periodic reporting via `/etc/cron.d/writehawk-report`.
+- Platform-filtered rule evaluations: `writehawk scan` now evaluates rules matching the host platform.
+- Linux root-owned system binary identification and SHA-256 verification in `ProtectedList`.
+
 ## [0.1.0] - 2026-11-22
 
 ### Added

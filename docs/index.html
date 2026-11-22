@@ -4,13 +4,13 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>writehawk: find what is wearing out your SSD</title>
-<meta name="description" content="A free 20-second check that tells you whether a known driver bug is quietly wearing out your SSD, and what to do about it. For Windows 10 and 11, with an easy step-by-step guide.">
+<meta name="description" content="A free check that tells you whether driver bugs or NAS storage loops are quietly wearing out your SSD, and what to do about it. For Windows, Linux and NAS.">
 <meta name="theme-color" content="#b4410e">
 <link rel="canonical" href="https://biossystem.github.io/writehawk/">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="writehawk">
-<meta property="og:title" content="writehawk: find the program that is quietly wearing out your SSD">
-<meta property="og:description" content="A free 20-second check for Windows 10 and 11. Finds known driver bugs that rewrite the same file all day, and tells you how to fix them.">
+<meta property="og:title" content="writehawk: find the program or workload quietly wearing out your SSD">
+<meta property="og:description" content="A free check for Windows, Linux, and NAS systems. Finds known driver bugs and storage loops that rewrite files all day, and safely mitigates them.">
 <meta property="og:url" content="https://biossystem.github.io/writehawk/">
 <meta property="og:image" content="https://biossystem.github.io/writehawk/og.png">
 <meta property="og:image:width" content="1200">
@@ -196,9 +196,9 @@
 <div class="wrap">
   <div class="hero">
     <div>
-      <div class="eyebrow"><b>Free and open source</b><span>Windows 10 and 11</span><span>No sign-up</span></div>
+      <div class="eyebrow"><b>Free and open source</b><span>Windows, Linux &amp; NAS</span><span>No sign-up</span></div>
       <h1>Find the program that is quietly wearing out your SSD.</h1>
-      <p class="lede">Some programs write the same small file thousands of times an hour. Nothing looks wrong, but the drive wears out faster. One free 20-second check tells you whether a known bug is doing it on your PC, and how to fix it.</p>
+      <p class="lede">Some programs write the same small file thousands of times an hour. Nothing looks wrong, but the drive wears out faster. One free check tells you whether a known bug or storage loop is doing it on your system, and how to fix it.</p>
       <div class="cta">
         <a class="btn primary" href="#easy" data-view="easy">Check my PC<small>Easy guide, step by step</small></a>
         <a class="btn ghost" href="#advanced" data-view="adv">I use the command line<small>Install and commands</small></a>
@@ -226,8 +226,8 @@ amd-eeu-dump-files: <span class="calm">NOT APPLICABLE</span>
 
   <div class="facts" aria-label="Facts">
     <div class="fact"><b>20 s</b><span>for one check, with a progress bar</span></div>
-    <div class="fact"><b>2</b><span>known driver bugs checked, each with sources</span></div>
-    <div class="fact"><b>150+</b><span>automated tests pass on every change</span></div>
+    <div class="fact"><b>6</b><span>known bugs and storage rules checked</span></div>
+    <div class="fact"><b>190+</b><span>automated tests pass on every change</span></div>
     <div class="fact"><b>0</b><span>bytes sent anywhere. No network use at all</span></div>
   </div>
 </div>
@@ -316,7 +316,7 @@ amd-eeu-dump-files: <span class="calm">NOT APPLICABLE</span>
         <li>
           <h3>Install writehawk</h3>
           <p>Copy this line, paste it into the Terminal with <kbd>Ctrl</kbd>+<kbd>V</kbd>, and press <kbd>Enter</kbd>:</p>
-          <div class="type"><span>python -m pip install https://github.com/BiosSystem/writehawk/releases/download/v0.1.0/writehawk-0.1.0-py3-none-any.whl</span><button type="button">copy</button></div>
+          <div class="type"><span>python -m pip install https://github.com/BiosSystem/writehawk/releases/download/v0.2.0/writehawk-0.2.0-py3-none-any.whl</span><button type="button">copy</button></div>
           <p class="tip">Wait until you see "Successfully installed writehawk". It takes under a minute. A yellow warning that something "is not on PATH" is normal here; you can ignore it.</p>
         </li>
         <li>
@@ -473,9 +473,13 @@ writehawk rollback --apply                          <span class="dim"># puts eve
     <h2>Known problems it checks</h2>
     <div class="scroll">
     <table>
-      <tr><th>Problem</th><th>What it writes</th><th>Fixed by the vendor in</th></tr>
-      <tr><td>NVIDIA display container</td><td>One log file, <code>nvlog.nvlgstg</code>, over and over</td><td>Hotfix driver 621.35</td></tr>
-      <tr><td>AMD External Events Utility</td><td>Rotating files in an <code>EeuDumps</code> folder while idle</td><td>Adrenalin 26.11.1 for RX 7000 and newer, 26.11.2 for RX 5000 and 6000</td></tr>
+      <tr><th>Platform / Subsystem</th><th>Problem</th><th>Mitigation / Fixed In</th></tr>
+      <tr><td>Windows: NVIDIA</td><td>One log file, <code>nvlog.nvlgstg</code>, written continuously</td><td>Hotfix driver 621.35 or writehawk fix</td></tr>
+      <tr><td>Windows: AMD</td><td>Rotating dump files in <code>EeuDumps</code> during idle</td><td>Adrenalin 26.11.1 / 26.11.2 or writehawk fix</td></tr>
+      <tr><td>Linux / NAS: Btrfs</td><td>SQLite databases &amp; WAL files without NOCOW churn</td><td><code>nodatacow</code> mount or <code>chattr +C</code></td></tr>
+      <tr><td>Linux / NAS: Docker</td><td>Unbounded JSON container logs without file rotation</td><td><code>max-size: 50m</code>, <code>max-file: 3</code> in daemon.json</td></tr>
+      <tr><td>Linux / NAS: Journald</td><td>Uncapped persistent system logs flushing to boot flash</td><td><code>SystemMaxUse=250M</code> in journald.conf.d</td></tr>
+      <tr><td>Linux / NAS: Kernel VM</td><td>Default swappiness (60) writing inactive anonymous pages</td><td><code>vm.swappiness=10</code> for SSD/NVMe root</td></tr>
     </table>
     </div>
     <p class="muted" style="margin-top:16px">Each problem is added only with evidence, and its sources are printed with every result. Know another program that rewrites a file all day? <a href="https://github.com/BiosSystem/writehawk/issues">Tell us</a>, ideally with the output of <code>writehawk report</code>.</p>
