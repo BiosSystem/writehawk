@@ -2,11 +2,11 @@
 
 # writehawk
 
-**Finds the program that is quietly wearing out your SSD.**
+**Finds the program or background workload quietly wearing out your SSD.**
 
-[![Platform](https://img.shields.io/badge/Platform-Windows_10_%2F_11_x64-0078D6?style=flat-square&logo=windows)](https://biossystem.github.io/writehawk/)
+[![Platform](https://img.shields.io/badge/Platform-Windows_%7C_Linux_%7C_NAS-0078D6?style=flat-square&logo=linux)](https://biossystem.github.io/writehawk/)
 [![Python](https://img.shields.io/badge/Python-3.11+-3776AB?style=flat-square&logo=python&logoColor=white)](https://biossystem.github.io/writehawk/)
-[![Release](https://img.shields.io/badge/Release-v0.1.0-brightgreen?style=flat-square&logo=github)](https://github.com/BiosSystem/writehawk/releases/tag/v0.1.0)
+[![Release](https://img.shields.io/badge/Release-v0.2.0-brightgreen?style=flat-square&logo=github)](https://github.com/BiosSystem/writehawk/releases/tag/v0.2.0)
 [![Guide](https://img.shields.io/badge/Interactive_Guide-Live-success?style=flat-square)](https://biossystem.github.io/writehawk/)
 [![License](https://img.shields.io/badge/License-MIT-blue?style=flat-square)](LICENSE)
 
@@ -14,9 +14,9 @@
 
 | Package | Platform | Target | Download Link |
 |---|---|---|---|
-| **Python Wheel** | Windows 10/11 x64 | Python 3.11+ | [writehawk-0.1.0-py3-none-any.whl](https://github.com/BiosSystem/writehawk/releases/download/v0.1.0/writehawk-0.1.0-py3-none-any.whl) |
-| **Source Archive** | Cross-platform | Tarball (.tar.gz) | [writehawk-0.1.0.tar.gz](https://github.com/BiosSystem/writehawk/releases/download/v0.1.0/writehawk-0.1.0.tar.gz) |
-| **Offline Bundle** | Windows 10/11 x64 | Wheel + Offline Guide | [writehawk-v0.1.0-bundle.zip](https://github.com/BiosSystem/writehawk/releases/download/v0.1.0/writehawk-v0.1.0-bundle.zip) |
+| **Python Wheel** | Cross-platform | Python 3.11+ | [writehawk-0.2.0-py3-none-any.whl](https://github.com/BiosSystem/writehawk/releases/download/v0.2.0/writehawk-0.2.0-py3-none-any.whl) |
+| **Source Archive** | Cross-platform | Tarball (.tar.gz) | [writehawk-0.2.0.tar.gz](https://github.com/BiosSystem/writehawk/releases/download/v0.2.0/writehawk-0.2.0.tar.gz) |
+| **Offline Bundle** | Cross-platform | Wheel + Offline Guide | [writehawk-v0.2.0-bundle.zip](https://github.com/BiosSystem/writehawk/releases/download/v0.2.0/writehawk-v0.2.0-bundle.zip) |
 
 [Interactive Guide & Live Demos](https://biossystem.github.io/writehawk/) · [Changelog](CHANGELOG.md) · [Security Policy](SECURITY.md)
 
@@ -26,101 +26,100 @@
 
 ## Overview
 
-Some background software rewrites the same small file thousands of times an hour. Task Manager shows a modest write rate, nothing looks wrong, and the drive absorbs gigabytes a day. In late 2026 two graphics driver releases were reported doing exactly that. 
+Some background software rewrites the same small file thousands of times an hour, or subjects flash storage to continuous write amplification loops. On Windows, graphics drivers have been found repeatedly rewriting log and dump files. On 24/7 Linux servers and Network Attached Storage (NAS) units (UGREEN UGOS Pro, Synology DSM, TrueNAS SCALE, Unraid), unconstrained Docker container logs, continuous `systemd-journald` flushes, SQLite write-ahead-logs (WAL) on Btrfs copy-on-write volumes, and default `vm.swappiness` quietly burn through flash endurance without user notification.
 
-**writehawk** finds this kind of silent write loop, tells you whether a known cause applies to your machine, and can safely apply and undo verified workarounds.
+**writehawk** finds these silent write loops, diagnoses whether known subsystem issues or driver bugs apply to your system, and safely applies and rolls back verified mitigations.
 
-- **Windows 10 and 11, 64-bit**
-- **Python 3.11 or newer**, zero external runtime dependencies
-- **No kernel driver** and no background service required
-- **Safe by default**: changes nothing on its own; workarounds require `--apply`, scheduled reporting requires `watch install`
+- **Cross-Platform**: Windows 10/11 x64, Linux distributions (Debian, Ubuntu, Arch, Fedora), and NAS operating systems (UGREEN UGOS Pro, Synology DSM, TrueNAS SCALE, Unraid, QNAP QTS).
+- **Python 3.11 or newer**, zero external runtime dependencies (pure standard library).
+- **No kernel driver** and no persistent background daemon required.
+- **Safe by default**: changes nothing on its own; mitigations require `--apply`, periodic reporting requires `watch install`.
 
 ---
 
 ## Interactive Guide & Web Documentation
 
 New to the command line or want a visual breakdown with pictures?  
-Visit the official **[writehawk Interactive Product Guide](https://biossystem.github.io/writehawk/)** for step-by-step walkthroughs, real-time rewrite simulations, and driver vulnerability charts.
+Visit the official **[writehawk Interactive Product Guide](https://biossystem.github.io/writehawk/)** for step-by-step walkthroughs, real-time rewrite simulations, and vulnerability charts.
 
 ---
 
 ## Quick Start
 
-```powershell
+```bash
 # Install latest release wheel:
-pip install https://github.com/BiosSystem/writehawk/releases/download/v0.1.0/writehawk-0.1.0-py3-none-any.whl
+pip install https://github.com/BiosSystem/writehawk/releases/download/v0.2.0/writehawk-0.2.0-py3-none-any.whl
 
 # Run a non-elevated diagnostic scan
 writehawk scan
 ```
 
-`scan` needs no administrator rights. While it watches it displays a progress indicator, evaluates all known vendor issues, and outputs a concise diagnostic summary:
+`scan` evaluates all applicable platform rules and outputs a concise diagnostic summary:
 
 ```text
 > writehawk scan
-Looking at the graphics cards ... 1 found
 Watching for disk writes  ████████████████████████  done
-Checking 2 known problems ... done
+Checking 4 known problems ... done
 
-nvidia-nvtopps-log-rewrite: EXPOSED
-  NVIDIA display container rewrites its log file without pause
-  Example GeForce card: driver 621.24 (affected from 621.14, fixed in 621.35)
-  note: 621.35 is a hotfix driver based on 621.24, for Windows 10 and 11.
-  workaround: available, not documented by the vendor. Stops the container from loading the plugin that writes the log.
-  why the fix may not have reached this machine:
-    - The fix is a hotfix driver. NVIDIA publishes hotfix drivers as a separate download from its support site and folds them into the next regular driver; no report shows the NVIDIA app or Windows Update offering this one. It has to be downloaded and installed by hand.
-  source: https://www.nvidia.com/en-us/geforce/forums/game-ready-drivers/13/592907/continuous-writing-of-gigabytes-to-ssd-to-nvtopps-/
-  source: https://wccftech.com/nvidia-releases-gpu-hotfix-driver-621-35-fixes-excessive-ssd-writes/
-  source: https://nvidia.custhelp.com/app/answers/detail/a_id/5940
+linux-btrfs-sqlite-nocow: FIXED
+  Btrfs volume with active SQLite databases has NOCOW attribute configured
 
-amd-eeu-dump-files: NOT APPLICABLE
-  AMD External Events Utility writes dump files while idle
-  no amd display adapter in this machine
+linux-docker-json-log-limit: EXPOSED
+  Docker container log files lack max-size caps; rewrites can accumulate unbounded
+  workaround: configure max-size: 50m and max-file: 3 in /etc/docker/daemon.json
 
-unknown rewrite loops: not checked, the file trace needs an elevated terminal
+linux-journald-flash-cap: FIXED
+  systemd-journald runtime storage and flush size are capped for flash endurance
 
-Summary: your graphics driver has 1 known problem. Update it to the version named above.
+linux-ssd-swappiness: EXPOSED
+  Linux kernel vm.swappiness is set to default (60); high swap writes wear SSDs
+  workaround: set vm.swappiness=10 in /etc/sysctl.d/99-writehawk-swappiness.conf
+
+Summary: your system has 2 storage recommendations. Run 'writehawk fix <rule>' to inspect mitigations.
 ```
 
 ### Scan Status Indicators
 
 | Status | Meaning |
 |---|---|
-| `NOT APPLICABLE` | The target hardware is not present in this machine |
-| `NOT AFFECTED` | The installed driver is older than the vulnerable range |
-| `FIXED` | The installed driver includes the vendor's official fix |
-| `EXPOSED` | The installed driver has the bug; no active loop was seen during this scan |
-| `MITIGATED` | The driver has the bug and a verified workaround is active |
+| `NOT APPLICABLE` | The target hardware or subsystem is not present on this machine |
+| `NOT AFFECTED` | The installed version or configuration is safe from the issue |
+| `FIXED` | The system includes the official fix or recommended baseline |
+| `EXPOSED` | Configuration has the vulnerability; no active loop was seen during this scan |
+| `MITIGATED` | Known issue detected and a verified workaround is active |
 | `ACTIVE` | Heavy disk rewrite loop actively observed during the scan window |
 
-Run from an administrator terminal to enable deep kernel ETW tracing for the duration of the scan, measuring loop overhead and identifying unexplained rewrite patterns.
+On Windows, run from an administrator terminal to enable kernel ETW tracing. On Linux/NAS, run with `sudo` to inspect `/proc/<pid>/io` for all processes and apply configuration mitigations.
 
 ---
 
-## Known Causes & Vendor Fixes
+## Supported Platforms & Diagnostic Catalog
 
-| Cause | Vendor Patch | Delivery |
-|---|---|---|
-| NVIDIA display container rewriting `nvlog.nvlgstg` | Hotfix Driver 621.35 | Manual standalone installer |
-| AMD External Events Utility writing `EeuDumps` while idle | Adrenalin 26.11.1 (RX 7000+) / 26.11.2 (RX 5000/6000) | Adrenalin Software Update |
+### Windows
+- **NVIDIA Display Container** (`nvtopps`): Detects continuous log file rewrite loop (`nvlog.nvlgstg`) in drivers 621.14 through 621.24 (fixed in hotfix 621.35).
+- **AMD External Events Utility** (`EeuDumps`): Detects dump file rewrite loop during idle in pre-26.11.1 drivers.
 
-Each catalog rule carries direct citations to vendor advisories and community verification threads.
+### Linux & NAS (UGREEN UGOS, Synology DSM, TrueNAS, Unraid, Generic Linux)
+- **Btrfs SQLite NOCOW** (`linux-btrfs-sqlite-nocow`): Detects SQLite databases and WAL files running without `chattr +C` on copy-on-write Btrfs shares, preventing rapid flash wear and metadata fragmentation.
+- **Docker JSON Log Limits** (`linux-docker-json-log-limit`): Checks whether the Docker daemon enforces log size and file rotation limits (`max-size`, `max-file`), preventing runaway container write churn.
+- **Journald Flush Cap** (`linux-journald-flash-cap`): Verifies `systemd-journald` configuration enforces caps on persistent disk logging (`SystemMaxUse`) on root SSDs.
+- **SSD Swap Aggressiveness** (`linux-ssd-swappiness`): Identifies aggressive default Linux kernel swap tendencies (`vm.swappiness >= 60`) on SSD/NVMe root pools and configures wear-reducing thresholds.
 
 ---
 
 ## Commands
 
-```powershell
-writehawk scan                  # Evaluate known issues: affected, fixed, mitigated, or active
+```bash
+writehawk scan                  # Evaluate known platform rules
 writehawk top --seconds 5       # Processes ranked by disk write rate
-writehawk trace --seconds 15    # Files ranked by bytes written, with rewrite ratio (Admin)
-writehawk context               # Display adapters, volumes, idle state, protected processes
-writehawk fix <rule>            # Preview workaround changes; append --apply to execute
+writehawk trace --seconds 15    # Files ranked by bytes written and rewrite ratio (Admin/root)
+writehawk context               # Display adapters, mount points, volumes, and protected processes
+writehawk fix <rule>            # Preview mitigation changes; append --apply to execute
 writehawk rollback              # Undo the most recent change using the local ledger
 writehawk status                # Review active modifications and verify integrity
 writehawk report --out r.json   # Comprehensive diagnostic payload as JSON
-writehawk watch install         # Register scheduled task for periodic reporting
-writehawk selftest              # Validate operational subsystems on this PC
+writehawk watch install         # Register scheduled task/cron for periodic reporting
+writehawk selftest              # Validate operational subsystems on this machine
 writehawk probe --dir <folder>  # Benchmark rewrite vs append disk costs on your hardware
 ```
 
@@ -128,20 +127,21 @@ writehawk probe --dir <folder>  # Benchmark rewrite vs append disk costs on your
 
 ## Applying Workarounds & Safe Rollback
 
-```powershell
+```bash
 # Dry-run preview
-writehawk fix nvidia-nvtopps-log-rewrite
+writehawk fix linux-ssd-swappiness
 
-# Apply workaround (Elevated terminal)
-writehawk fix nvidia-nvtopps-log-rewrite --apply
+# Apply workaround (root / Administrator)
+writehawk fix linux-ssd-swappiness --apply
 
 # Roll back all changes
 writehawk rollback --apply
 ```
 
-- **Reversible & Documented**: Workarounds adjust explicit registry values to disable affected logging plugins or idle services.
-- **Pre-Execution Ledger**: The exact prior state of every modified key is recorded in `%ProgramData%\writehawk\ledger` before any modification takes place.
-- **Safe Rollback**: `rollback` restores exclusively from the pre-modification ledger and halts if values were changed by third-party software since apply.
+- **Reversible & Documented**: Workarounds modify explicit registry values (Windows) or `/etc` configuration drop-ins (Linux) without touching third-party binaries.
+- **Pre-Execution Ledger**: The exact prior state of every modified file or key is recorded in `%ProgramData%\writehawk\ledger` (Windows) or `/var/lib/writehawk/ledger` (Linux) before any change occurs.
+- **Safe Rollback**: `rollback` restores exclusively from the pre-modification ledger and halts if files were modified externally since application.
+
 - **Zero Surprises**: Modifications take effect when the targeted service restarts (`--now` restarts it immediately).
 
 ---
