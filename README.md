@@ -6,8 +6,17 @@
 
 [![Platform](https://img.shields.io/badge/Platform-Windows_10_%2F_11_x64-0078D6?style=flat-square&logo=windows)](https://biossystem.github.io/writehawk/)
 [![Python](https://img.shields.io/badge/Python-3.11+-3776AB?style=flat-square&logo=python&logoColor=white)](https://biossystem.github.io/writehawk/)
+[![Release](https://img.shields.io/badge/Release-v0.1.0-brightgreen?style=flat-square&logo=github)](https://github.com/BiosSystem/writehawk/releases/tag/v0.1.0)
 [![Guide](https://img.shields.io/badge/Interactive_Guide-Live-success?style=flat-square)](https://biossystem.github.io/writehawk/)
 [![License](https://img.shields.io/badge/License-MIT-blue?style=flat-square)](LICENSE)
+
+<br/>
+
+| Package | Platform | Target | Download Link |
+|---|---|---|---|
+| **Python Wheel** | Windows 10/11 x64 | Python 3.11+ | [writehawk-0.1.0-py3-none-any.whl](https://github.com/BiosSystem/writehawk/releases/download/v0.1.0/writehawk-0.1.0-py3-none-any.whl) |
+| **Source Archive** | Cross-platform | Tarball (.tar.gz) | [writehawk-0.1.0.tar.gz](https://github.com/BiosSystem/writehawk/releases/download/v0.1.0/writehawk-0.1.0.tar.gz) |
+| **Offline Bundle** | Windows 10/11 x64 | Wheel + Offline Guide | [writehawk-v0.1.0-bundle.zip](https://github.com/BiosSystem/writehawk/releases/download/v0.1.0/writehawk-v0.1.0-bundle.zip) |
 
 [Interactive Guide & Live Demos](https://biossystem.github.io/writehawk/) · [Changelog](CHANGELOG.md) · [Security Policy](SECURITY.md)
 
@@ -38,6 +47,9 @@ Visit the official **[writehawk Interactive Product Guide](https://biossystem.gi
 ## Quick Start
 
 ```powershell
+# Install latest release wheel:
+pip install https://github.com/BiosSystem/writehawk/releases/download/v0.1.0/writehawk-0.1.0-py3-none-any.whl
+
 # Run a non-elevated diagnostic scan
 writehawk scan
 ```
