@@ -58,8 +58,7 @@ load a driver.
 
 ## Rules for future changes to the system
 
-When fixes are added they follow the rules in
-[ARCHITECTURE.md](ARCHITECTURE.md): nothing is changed without an explicit
+When fixes are added they follow strict safety invariants: nothing is changed without an explicit
 request, the prior state is recorded before the change, and every change can be
 undone from that record.
 

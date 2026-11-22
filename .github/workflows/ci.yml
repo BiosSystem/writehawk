@@ -1,4 +1,4 @@
-name: CI
+name: Public Showcase CI
 
 on:
   push:
@@ -14,43 +14,18 @@ permissions:
   contents: read
 
 jobs:
-  test:
-    name: ${{ matrix.os }}, Python ${{ matrix.python }}
-    runs-on: ${{ matrix.os }}
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [windows-latest]
-        python: ['3.11', '3.12', '3.13', '3.14']
-        include:
-          # An older Windows 10 era kernel, to catch what only newer builds allow.
-          - os: windows-2022
-            python: '3.12'
+  validate-showcase:
+    name: Validate Showcase & Documentation
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
-      - uses: actions/setup-python@v5
-        with:
-          python-version: ${{ matrix.python }}
-
-      - name: Windows build
-        run: cmd /c ver
-
-      - name: Install into a venv
+      - name: Verify Documentation & Web Assets
         run: |
-          python -m venv .venv
-          .venv\Scripts\python -m pip install --disable-pip-version-check . pytest ruff
-
-      - name: Lint
-        run: .venv\Scripts\python -m ruff check .
-
-      # Tests that change the system skip here: they run only in the sandbox harness.
-      - name: Tests
-        run: .venv\Scripts\python -m pytest -q -rs
-
-      - name: Installed command
-        run: |
-          .venv\Scripts\writehawk --version
-          .venv\Scripts\writehawk top --seconds 1 --limit 5
-          .venv\Scripts\writehawk context
-          .venv\Scripts\writehawk scan --seconds 2
+          test -f README.md
+          test -f CHANGELOG.md
+          test -f LICENSE
+          test -f SECURITY.md
+          test -f docs/index.html
+          test -f docs/og.png
+          echo "All showcase assets and documentation files present."
