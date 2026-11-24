@@ -1,0 +1,48 @@
+name: Test report
+description: Share the result of `writehawk selftest`, especially from Windows 10, Linux or a NAS.
+title: "Test report: "
+labels: ["test report"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you. Every report from a different Windows version or graphics card tells us something we cannot test ourselves.
+        Run this in a terminal and paste everything it prints below:
+
+        ```
+        writehawk selftest
+        ```
+
+        For the two trace checks, run it once more from a terminal opened with **Run as administrator** (Windows) or with `sudo` (Linux and NAS), and paste that too.
+        The output names your system version and nothing that identifies your machine.
+  - type: dropdown
+    id: windows
+    attributes:
+      label: System
+      options:
+        - Windows 10
+        - Windows 11
+        - Windows Server
+        - Linux
+        - NAS (say which one below)
+        - Not sure
+    validations:
+      required: true
+  - type: textarea
+    id: selftest
+    attributes:
+      label: Output of `writehawk selftest`
+      render: text
+    validations:
+      required: true
+  - type: textarea
+    id: selftest-admin
+    attributes:
+      label: Same command, as administrator or with sudo (optional)
+      render: text
+  - type: textarea
+    id: scan
+    attributes:
+      label: Output of `writehawk scan` (optional)
+      description: Useful with an NVIDIA or AMD graphics card, or on a NAS (name the system). Paths in the output can contain your user name; remove it if you prefer.
+      render: text
