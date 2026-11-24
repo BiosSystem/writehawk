@@ -30,7 +30,7 @@ Some background software rewrites the same small file thousands of times an hour
 
 **writehawk** finds these silent write loops, diagnoses whether known subsystem issues or driver bugs apply to your system, and safely applies and rolls back verified mitigations.
 
-- **Cross-Platform**: Windows 10/11 x64, Linux distributions (Debian, Ubuntu, Arch, Fedora), and NAS operating systems (UGREEN UGOS Pro, Synology DSM, TrueNAS SCALE, Unraid, QNAP QTS).
+- **Platforms**: Windows 10 and 11, 64-bit (tested on Windows 11 and Windows Server; a Windows 10 PC has not run it yet). Linux and NAS systems as a preview: tested inside a Linux container, not yet on a real NAS. See [What has been tested](#what-has-been-tested).
 - **Python 3.11 or newer**, zero external runtime dependencies (pure standard library).
 - **No kernel driver** and no persistent background daemon required.
 - **Safe by default**: changes nothing on its own; mitigations require `--apply`, periodic reporting requires `watch install`.
@@ -54,28 +54,30 @@ pip install https://github.com/BiosSystem/writehawk/releases/download/v0.2.0/wri
 writehawk scan
 ```
 
-`scan` evaluates all applicable platform rules and outputs a concise diagnostic summary:
+`scan` evaluates the rules for your platform. This is the real output on a Windows PC with an
+affected NVIDIA driver (source links omitted):
 
 ```text
 > writehawk scan
+Looking at the graphics cards ... 1 found
 Watching for disk writes  ████████████████████████  done
-Checking 4 known problems ... done
+Checking 2 known problems ... done
 
-linux-btrfs-sqlite-nocow: FIXED
-  Btrfs volume with active SQLite databases has NOCOW attribute configured
+nvidia-nvtopps-log-rewrite: EXPOSED
+  NVIDIA display container rewrites its log file without pause
+  NVIDIA GeForce RTX 4080: driver 621.24 (affected from 621.14, fixed in 621.35)
+  note: 621.35 is a hotfix driver based on 621.24, for Windows 10 and 11.
+  workaround: available, not documented by the vendor. Stops the container from loading the plugin that writes the log. NVIDIA does not document this value. It was seen to stop the writes on one affected machine.
+  why the fix may not have reached this machine:
+    - The fix is a hotfix driver. NVIDIA publishes hotfix drivers as a separate download from its support site and folds them into the next regular driver; no report shows the NVIDIA app or Windows Update offering this one. It has to be downloaded and installed by hand.
 
-linux-docker-json-log-limit: EXPOSED
-  Docker container log files lack max-size caps; rewrites can accumulate unbounded
-  workaround: configure max-size: 50m and max-file: 3 in /etc/docker/daemon.json
+amd-eeu-dump-files: NOT APPLICABLE
+  AMD External Events Utility writes dump files while idle
+  no amd display adapter in this machine
 
-linux-journald-flash-cap: FIXED
-  systemd-journald runtime storage and flush size are capped for flash endurance
+unknown rewrite loops: not checked, the file trace needs an elevated terminal
 
-linux-ssd-swappiness: EXPOSED
-  Linux kernel vm.swappiness is set to default (60); high swap writes wear SSDs
-  workaround: set vm.swappiness=10 in /etc/sysctl.d/99-writehawk-swappiness.conf
-
-Summary: your system has 2 storage recommendations. Run 'writehawk fix <rule>' to inspect mitigations.
+Summary: your graphics driver has 1 known problem. Update it to the version named above.
 ```
 
 ### Scan Status Indicators
@@ -97,7 +99,7 @@ On Windows, run from an administrator terminal to enable kernel ETW tracing. On 
 
 ### Windows
 - **NVIDIA Display Container** (`nvtopps`): Detects continuous log file rewrite loop (`nvlog.nvlgstg`) in drivers 621.14 through 621.24 (fixed in hotfix 621.35).
-- **AMD External Events Utility** (`EeuDumps`): Detects dump file rewrite loop during idle in pre-26.11.1 drivers.
+- **AMD External Events Utility** (`EeuDumps`): Detects the dump file loop during idle. Fixed in 26.11.1 for RX 7000 and newer and in 26.11.2 for RX 5000 and 6000; writehawk asks for 26.11.2.
 
 ### Linux & NAS (UGREEN UGOS, Synology DSM, TrueNAS, Unraid, Generic Linux)
 - **Btrfs SQLite NOCOW** (`linux-btrfs-sqlite-nocow`): Detects SQLite databases and WAL files running without `chattr +C` on copy-on-write Btrfs shares, preventing rapid flash wear and metadata fragmentation.
@@ -175,6 +177,18 @@ writehawk status          # Roll back any active mitigations
 Then remove `%ProgramData%\writehawk`.
 
 ---
+
+## What has been tested
+
+| Area | Tested | Not tested yet |
+|---|---|---|
+| Windows | Windows 11 desktop; Windows Server 2022 and 2025 on every change (Server 2022 shares its core with Windows 10) | A Windows 10 PC |
+| Linux & NAS | Test suite and main commands inside a Linux container | A real NAS: UGOS, DSM, TrueNAS, Unraid |
+| NVIDIA and AMD bugs | A replay of each bug's write pattern at the real file paths | A machine with the live bug |
+| Applying and undoing a fix | Byte for byte on a test registry key and service in a throwaway Windows | NVIDIA's or AMD's own service |
+
+On Windows 10, Linux or a NAS? Run `writehawk selftest` and
+[share what it prints](https://github.com/BiosSystem/writehawk/issues/new?template=test-report.yml).
 
 ## License
 
