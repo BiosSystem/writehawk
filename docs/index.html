@@ -847,7 +847,7 @@
   <div class="wrap hero-grid">
     <div>
       <div class="badge-row">
-        <div class="pill highlight"><span class="dot"></span> Release v0.2.1 Live</div>
+        <div class="pill highlight"><span class="dot"></span> Release v0.2.2 Live</div>
         <div class="pill">Windows 10 / 11</div>
         <div class="pill">Linux &amp; NAS (preview)</div>
         <a class="pill" href="#limits" style="text-decoration:none">What is tested &rarr;</a>
@@ -881,7 +881,7 @@
           <span class="d-yellow"></span>
           <span class="d-green"></span>
         </div>
-        <div class="term-title">Real writehawk 0.2.1 output (sources omitted)</div>
+        <div class="term-title">Real writehawk 0.2.2 output (sources omitted)</div>
         <div class="term-tabs">
           <button class="term-btn active" id="btn-scen-nvidia" onclick="runScenario('nvidia')">Affected driver</button>
           <button class="term-btn" id="btn-scen-nas" onclick="runScenario('nas')">NAS settings</button>
@@ -1136,7 +1136,7 @@ unknown rewrite loops: not checked, the file trace needs an elevated terminal
         </div>
         <p style="font-size: 14px; margin-bottom: 8px;">Open Windows Terminal (PowerShell) or your Linux shell and paste:</p>
         <div class="copy-strip">
-          <span id="cmd-install">pip install https://github.com/BiosSystem/writehawk/releases/download/v0.2.1/writehawk-0.2.1-py3-none-any.whl</span>
+          <span id="cmd-install">pip install https://github.com/BiosSystem/writehawk/releases/download/v0.2.2/writehawk-0.2.2-py3-none-any.whl</span>
           <button class="copy-btn" onclick="copyText('cmd-install')">Copy</button>
         </div>
       </div>
@@ -1226,7 +1226,7 @@ unknown rewrite loops: not checked, the file trace needs an elevated terminal
           <ul class="arch-list">
             <li><strong>VFS vs Physical:</strong> Compares <code>/proc/&lt;pid&gt;/io</code> VFS characters (<code>wchar</code>) against physical sector writes (<code>write_bytes</code>).</li>
             <li><strong>Storage Queues:</strong> Reads <code>/proc/diskstats</code> and <code>/sys/class/block/*/queue/rotational</code> for TRIM / discard tracking.</li>
-            <li><strong>Btrfs CoW Auditing:</strong> Inspects Btrfs subvolumes for active SQLite WAL files running without the <code>NOCOW</code> (<code>chattr +C</code>) attribute.</li>
+            <li><strong>Btrfs Volumes:</strong> Finds Btrfs volumes in <code>/proc/mounts</code>, notes whether they are mounted <code>nodatacow</code>, and watches database write loops under container volume folders.</li>
             <li><strong>NAS OS Detection:</strong> Identifies UGOS Pro, Synology DSM, TrueNAS SCALE, and Unraid automatically.</li>
           </ul>
         </div>
@@ -1382,19 +1382,19 @@ unknown rewrite loops: not checked, the file trace needs an elevated terminal
             <td><code>linux-btrfs-sqlite-nocow</code></td>
             <td>Linux / NAS (Btrfs)</td>
             <td>SQLite databases &amp; WAL files on CoW volumes without NOCOW</td>
-            <td><code>nodatacow</code> mount or <code>chattr +C</code></td>
+            <td>By hand: copy the database into a <code>chattr +C</code> folder (<code>writehawk fix</code> prints the steps)</td>
           </tr>
           <tr>
             <td><code>linux-docker-json-log-limit</code></td>
             <td>Linux / NAS (Docker)</td>
             <td>Unbounded container JSON logs churning without rotation caps</td>
-            <td><code>max-size: 50m</code>, <code>max-file: 3</code> in daemon.json</td>
+            <td><code>max-size: 10m</code>, <code>max-file: 3</code> in daemon.json</td>
           </tr>
           <tr>
             <td><code>linux-journald-flash-cap</code></td>
             <td>Linux / NAS (systemd)</td>
             <td>Uncapped persistent system journals flushing index to boot flash</td>
-            <td><code>SystemMaxUse=250M</code> in journald.conf.d</td>
+            <td><code>SystemMaxUse=64M</code>, <code>RuntimeMaxUse=32M</code> in journald.conf.d</td>
           </tr>
           <tr>
             <td><code>linux-ssd-swappiness</code></td>
@@ -1430,7 +1430,7 @@ unknown rewrite loops: not checked, the file trace needs an elevated terminal
           </tr>
           <tr>
             <td><strong>Linux &amp; NAS</strong></td>
-            <td>The test suite, and the installed package's scan and selftest, inside a Linux container</td>
+            <td>The test suite, and the installed package's scan and selftest, inside a Linux container. The Docker and journald fixes, applied and rolled back against the real services in containers</td>
             <td>A real NAS: UGOS, DSM, TrueNAS and Unraid have not run it</td>
           </tr>
           <tr>
@@ -1472,11 +1472,11 @@ unknown rewrite loops: not checked, the file trace needs an elevated terminal
       </p>
     </div>
     <div>
-      <h4>Downloads (v0.2.1)</h4>
+      <h4>Downloads (v0.2.2)</h4>
       <ul>
-        <li><a href="https://github.com/BiosSystem/writehawk/releases/download/v0.2.1/writehawk-0.2.1-py3-none-any.whl">Python Wheel (.whl)</a></li>
-        <li><a href="https://github.com/BiosSystem/writehawk/releases/download/v0.2.1/writehawk-0.2.1.tar.gz">Source Tarball (.tar.gz)</a></li>
-        <li><a href="https://github.com/BiosSystem/writehawk/releases/download/v0.2.1/writehawk-v0.2.1-bundle.zip">Offline Bundle (.zip)</a></li>
+        <li><a href="https://github.com/BiosSystem/writehawk/releases/download/v0.2.2/writehawk-0.2.2-py3-none-any.whl">Python Wheel (.whl)</a></li>
+        <li><a href="https://github.com/BiosSystem/writehawk/releases/download/v0.2.2/writehawk-0.2.2.tar.gz">Source Tarball (.tar.gz)</a></li>
+        <li><a href="https://github.com/BiosSystem/writehawk/releases/download/v0.2.2/writehawk-v0.2.2-bundle.zip">Offline Bundle (.zip)</a></li>
       </ul>
     </div>
     <div>
@@ -1526,7 +1526,8 @@ unknown rewrite loops: not checked, the file trace needs an elevated terminal
     nas: `<span class="t-dim">&gt;</span> <span class="t-cmd">sudo writehawk scan</span>
 <span class="t-dim">Looking at the graphics cards ... 0 found</span>
 <span class="t-dim">Looking at the storage setup ... btrfs, docker</span>
-<span class="t-dim">Watching for disk writes</span>  <span class="prog-bar"><b></b></span>  <span class="t-ok">done</span>
+<span class="t-dim">Watching every file write</span>  <span class="prog-bar"><b></b></span>  <span class="t-ok">done</span>
+<span class="t-dim">Naming the files that were written ... done</span>
 <span class="t-dim">Checking 4 known problems ... done</span>
 
 <span class="t-hot">linux-btrfs-sqlite-nocow:</span> <span class="t-badge active">ACTIVE</span>
@@ -1534,7 +1535,7 @@ unknown rewrite loops: not checked, the file trace needs an elevated terminal
   Btrfs Storage Pool: recommended setting not in place
   note: Setting the Btrfs NOCOW attribute (chattr +C) on database directories or mounting with nodatacow prevents extent fragmentation on random overwrites.
   changed on disk during the scan: /volume1/docker/app/state.db-wal
-  workaround: available. Enables the writehawk Btrfs NOCOW policy marker so database state directories opt out of copy-on-write amplification.
+  workaround: by hand only. Existing databases have to be copied into a folder marked NOCOW, which needs the application stopped, so writehawk does not do it by itself. writehawk fix linux-btrfs-sqlite-nocow prints the steps.
   why it is not set already:
     - Btrfs enables copy-on-write by default on all newly created directories unless explicitly marked with chattr +C.
 
@@ -1554,7 +1555,7 @@ unknown rewrite loops: not checked, the file trace needs an elevated terminal
   High kernel vm.swappiness pages idle container and service memory to SSD swap
   no readable swap setting on this machine
 
-unknown rewrite loops: not checked, the file trace needs an elevated terminal
+unknown rewrite loops: none seen
 
 <span class="t-hot">Summary:</span> 1 known problem writing to your drive right now. Apply the setting named above; writehawk fix &lt;rule&gt; shows the change before making it.`,
 
@@ -1623,13 +1624,13 @@ unknown rewrite loops: not checked, the file trace needs an elevated terminal
     },
     btrfs: {
       title: "NAS Btrfs SQLite Copy-on-Write Amplification",
-      desc: "On UGREEN UGOS Pro, Synology DSM, and Linux NAS systems running Btrfs, SQLite databases (Plex, Home Assistant, Docker apps) modify 4 KB pages in write-ahead logs (WAL). Because Btrfs is Copy-on-Write, each 4 KB write creates new extent trees, amplifying flash write wear up to 300x.",
-      fix: "writehawk detects affected databases and applies the NOCOW attribute (chattr +C) or recommends nodatacow mount flags to eliminate metadata amplification."
+      desc: "On UGREEN UGOS Pro, Synology DSM, and Linux NAS systems running Btrfs, SQLite databases (Plex, Home Assistant, Docker apps) modify 4 KB pages in write-ahead logs (WAL). Because Btrfs is copy-on-write, each small overwrite is written to a new place and its metadata is rewritten too, so the drive writes far more than the database changed.",
+      fix: "writehawk finds the Btrfs volume and watches for the write loop. The fix is done by hand, with the application stopped: copy the database into a new folder marked chattr +C. writehawk fix linux-btrfs-sqlite-nocow prints the steps; it does not change anything itself."
     },
     docker: {
       title: "Docker Unbounded JSON Container Logging",
       desc: "Default Docker engine installations log container stdout/stderr to JSON files without max-size or rotation limits. Long-running NAS containers write continuous telemetry into the flash root pool.",
-      fix: "writehawk scans /etc/docker/daemon.json and provides an automated, reversible configuration drop-in configuring max-size: 50m and max-file: 3."
+      fix: "writehawk reads /etc/docker/daemon.json and, when you ask, sets log rotation to max-size 10m and max-file 3. It keeps the original file and can put it back with writehawk rollback."
     }
   };
 
@@ -1736,11 +1737,11 @@ Undo with: writehawk rollback 20261122-120000-nvidia-nvtopps-log-rewrite --apply
       snippet: "writehawk selftest",
       output: `<span class="t-dim">&gt;</span> <span class="t-cmd">writehawk selftest</span>
 <span class="t-dim">Checking each part of writehawk on this machine ... done</span>
-writehawk 0.2.1, Windows 11 build 10.0.26300, Python 3.12.10 64-bit
+writehawk 0.2.2, Windows 11 build 10.0.26300, Python 3.12.10 64-bit
 
-PASS  process list: 548 processes listed
+PASS  process list: 507 processes listed
 PASS  process write counters: read for this process
-PASS  volume write counters: C: has 2109766 writes counted since boot
+PASS  volume write counters: C: has 12448383 writes counted since boot
 PASS  graphics cards and drivers: 1 found (nvidia)
 PASS  active displays: 2 active
 PASS  volumes and media type: 6 listed, media: hdd, ssd, unknown

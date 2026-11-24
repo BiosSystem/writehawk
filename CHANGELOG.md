@@ -3,6 +3,24 @@
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 Versions follow [Semantic Versioning](https://semver.org/).
 
+## [0.2.2] - 2026-11-24
+
+### Fixed
+
+- The Btrfs database rule no longer claims a workaround it cannot apply. Its
+  old fix wrote a marker file that nothing read, and the rule would then have
+  read MITIGATED. Moving a database into a NOCOW folder needs the application
+  stopped, so `writehawk fix linux-btrfs-sqlite-nocow` now prints the steps to
+  do by hand, `--apply` refuses, and the rule stays EXPOSED.
+- On Linux, `fix`, `status` and `rollback` name the file and setting they
+  touch (`/etc/docker/daemon.json: log-opts max-size = 10m`) instead of a
+  registry-style path. Rolling back the swap setting says that the running
+  kernel keeps the current value until the next restart.
+- A refused Linux `fix` no longer speaks of display adapters or drivers.
+- This page and the README stated Docker `max-size 50m` and journald
+  `SystemMaxUse=250M`; the tool writes 10m (with max-file 3) and 64M (with
+  RuntimeMaxUse=32M). The NAS demo now shows an elevated scan's real output.
+
 ## [0.2.1] - 2026-11-24
 
 ### Fixed

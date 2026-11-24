@@ -6,7 +6,7 @@
 
 [![Platform](https://img.shields.io/badge/Platform-Windows_%7C_Linux_%7C_NAS-0078D6?style=flat-square&logo=linux)](https://biossystem.github.io/writehawk/)
 [![Python](https://img.shields.io/badge/Python-3.11+-3776AB?style=flat-square&logo=python&logoColor=white)](https://biossystem.github.io/writehawk/)
-[![Release](https://img.shields.io/badge/Release-v0.2.1-brightgreen?style=flat-square&logo=github)](https://github.com/BiosSystem/writehawk/releases/tag/v0.2.1)
+[![Release](https://img.shields.io/badge/Release-v0.2.2-brightgreen?style=flat-square&logo=github)](https://github.com/BiosSystem/writehawk/releases/tag/v0.2.2)
 [![Guide](https://img.shields.io/badge/Interactive_Guide-Live-success?style=flat-square)](https://biossystem.github.io/writehawk/)
 [![License](https://img.shields.io/badge/License-MIT-blue?style=flat-square)](LICENSE)
 
@@ -14,9 +14,9 @@
 
 | Package | Platform | Target | Download Link |
 |---|---|---|---|
-| **Python Wheel** | Cross-platform | Python 3.11+ | [writehawk-0.2.1-py3-none-any.whl](https://github.com/BiosSystem/writehawk/releases/download/v0.2.1/writehawk-0.2.1-py3-none-any.whl) |
-| **Source Archive** | Cross-platform | Tarball (.tar.gz) | [writehawk-0.2.1.tar.gz](https://github.com/BiosSystem/writehawk/releases/download/v0.2.1/writehawk-0.2.1.tar.gz) |
-| **Offline Bundle** | Cross-platform | Wheel + Offline Guide | [writehawk-v0.2.1-bundle.zip](https://github.com/BiosSystem/writehawk/releases/download/v0.2.1/writehawk-v0.2.1-bundle.zip) |
+| **Python Wheel** | Cross-platform | Python 3.11+ | [writehawk-0.2.2-py3-none-any.whl](https://github.com/BiosSystem/writehawk/releases/download/v0.2.2/writehawk-0.2.2-py3-none-any.whl) |
+| **Source Archive** | Cross-platform | Tarball (.tar.gz) | [writehawk-0.2.2.tar.gz](https://github.com/BiosSystem/writehawk/releases/download/v0.2.2/writehawk-0.2.2.tar.gz) |
+| **Offline Bundle** | Cross-platform | Wheel + Offline Guide | [writehawk-v0.2.2-bundle.zip](https://github.com/BiosSystem/writehawk/releases/download/v0.2.2/writehawk-v0.2.2-bundle.zip) |
 
 [Interactive Guide & Live Demos](https://biossystem.github.io/writehawk/) · [Changelog](CHANGELOG.md) · [Security Policy](SECURITY.md)
 
@@ -48,7 +48,7 @@ Visit the official **[writehawk Interactive Product Guide](https://biossystem.gi
 
 ```bash
 # Install latest release wheel:
-pip install https://github.com/BiosSystem/writehawk/releases/download/v0.2.1/writehawk-0.2.1-py3-none-any.whl
+pip install https://github.com/BiosSystem/writehawk/releases/download/v0.2.2/writehawk-0.2.2-py3-none-any.whl
 
 # Run a non-elevated diagnostic scan
 writehawk scan
@@ -102,10 +102,10 @@ On Windows, run from an administrator terminal to enable kernel ETW tracing. On 
 - **AMD External Events Utility** (`EeuDumps`): Detects the dump file loop during idle. Fixed in 26.11.1 for RX 7000 and newer and in 26.11.2 for RX 5000 and 6000; writehawk asks for 26.11.2.
 
 ### Linux & NAS (UGREEN UGOS, Synology DSM, TrueNAS, Unraid, Generic Linux)
-- **Btrfs SQLite NOCOW** (`linux-btrfs-sqlite-nocow`): Detects SQLite databases and WAL files running without `chattr +C` on copy-on-write Btrfs shares, preventing rapid flash wear and metadata fragmentation.
-- **Docker JSON Log Limits** (`linux-docker-json-log-limit`): Checks whether the Docker daemon enforces log size and file rotation limits (`max-size`, `max-file`), preventing runaway container write churn.
-- **Journald Flush Cap** (`linux-journald-flash-cap`): Verifies `systemd-journald` configuration enforces caps on persistent disk logging (`SystemMaxUse`) on root SSDs.
-- **SSD Swap Aggressiveness** (`linux-ssd-swappiness`): Identifies aggressive default Linux kernel swap tendencies (`vm.swappiness >= 60`) on SSD/NVMe root pools and configures wear-reducing thresholds.
+- **Btrfs SQLite NOCOW** (`linux-btrfs-sqlite-nocow`): Finds Btrfs volumes not mounted `nodatacow` and watches for database write loops under container volume folders. The fix is done by hand (copy the database into a `chattr +C` folder with the application stopped); `writehawk fix` prints the steps and changes nothing.
+- **Docker JSON Log Limits** (`linux-docker-json-log-limit`): Checks whether `/etc/docker/daemon.json` limits container log size. The fix sets `max-size` 10m and `max-file` 3 and keeps the original file for rollback.
+- **Journald Flush Cap** (`linux-journald-flash-cap`): Checks whether `systemd-journald` caps its persistent log (`SystemMaxUse`). The fix adds a drop-in with `SystemMaxUse=64M` and `RuntimeMaxUse=32M`.
+- **SSD Swap Aggressiveness** (`linux-ssd-swappiness`): Flags `vm.swappiness` above 10 (most distributions ship 60). The fix writes `vm.swappiness = 10` to `/etc/sysctl.d` and applies it to the running kernel; after a rollback the running kernel keeps 10 until the next restart.
 
 ---
 
@@ -136,7 +136,7 @@ writehawk fix linux-ssd-swappiness
 # Apply workaround (root / Administrator)
 writehawk fix linux-ssd-swappiness --apply
 
-# Roll back all changes
+# Undo the most recent change
 writehawk rollback --apply
 ```
 
@@ -183,7 +183,7 @@ Then remove `%ProgramData%\writehawk`.
 | Area | Tested | Not tested yet |
 |---|---|---|
 | Windows | Windows 11 desktop; Windows Server 2022 and 2025 on every change (Server 2022 shares its core with Windows 10) | A Windows 10 PC |
-| Linux & NAS | Test suite, and the installed package's scan and selftest, inside a Linux container | A real NAS: UGOS, DSM, TrueNAS, Unraid |
+| Linux & NAS | Test suite, and the installed package's scan and selftest, inside a Linux container; the Docker and journald fixes applied and rolled back against the real services in containers | A real NAS: UGOS, DSM, TrueNAS, Unraid |
 | NVIDIA and AMD bugs | A replay of each bug's write pattern at the real file paths | A machine with the live bug |
 | Applying and undoing a fix | Byte for byte on a test registry key and service in a throwaway Windows | NVIDIA's or AMD's own service |
 
