@@ -6,7 +6,7 @@
 
 [![Platform](https://img.shields.io/badge/Platform-Windows_%7C_Linux_%7C_NAS-0078D6?style=flat-square&logo=linux)](https://biossystem.github.io/writehawk/)
 [![Python](https://img.shields.io/badge/Python-3.11+-3776AB?style=flat-square&logo=python&logoColor=white)](https://biossystem.github.io/writehawk/)
-[![Release](https://img.shields.io/badge/Release-v0.2.0-brightgreen?style=flat-square&logo=github)](https://github.com/BiosSystem/writehawk/releases/tag/v0.2.0)
+[![Release](https://img.shields.io/badge/Release-v0.2.1-brightgreen?style=flat-square&logo=github)](https://github.com/BiosSystem/writehawk/releases/tag/v0.2.1)
 [![Guide](https://img.shields.io/badge/Interactive_Guide-Live-success?style=flat-square)](https://biossystem.github.io/writehawk/)
 [![License](https://img.shields.io/badge/License-MIT-blue?style=flat-square)](LICENSE)
 
@@ -14,9 +14,9 @@
 
 | Package | Platform | Target | Download Link |
 |---|---|---|---|
-| **Python Wheel** | Cross-platform | Python 3.11+ | [writehawk-0.2.0-py3-none-any.whl](https://github.com/BiosSystem/writehawk/releases/download/v0.2.0/writehawk-0.2.0-py3-none-any.whl) |
-| **Source Archive** | Cross-platform | Tarball (.tar.gz) | [writehawk-0.2.0.tar.gz](https://github.com/BiosSystem/writehawk/releases/download/v0.2.0/writehawk-0.2.0.tar.gz) |
-| **Offline Bundle** | Cross-platform | Wheel + Offline Guide | [writehawk-v0.2.0-bundle.zip](https://github.com/BiosSystem/writehawk/releases/download/v0.2.0/writehawk-v0.2.0-bundle.zip) |
+| **Python Wheel** | Cross-platform | Python 3.11+ | [writehawk-0.2.1-py3-none-any.whl](https://github.com/BiosSystem/writehawk/releases/download/v0.2.1/writehawk-0.2.1-py3-none-any.whl) |
+| **Source Archive** | Cross-platform | Tarball (.tar.gz) | [writehawk-0.2.1.tar.gz](https://github.com/BiosSystem/writehawk/releases/download/v0.2.1/writehawk-0.2.1.tar.gz) |
+| **Offline Bundle** | Cross-platform | Wheel + Offline Guide | [writehawk-v0.2.1-bundle.zip](https://github.com/BiosSystem/writehawk/releases/download/v0.2.1/writehawk-v0.2.1-bundle.zip) |
 
 [Interactive Guide & Live Demos](https://biossystem.github.io/writehawk/) · [Changelog](CHANGELOG.md) · [Security Policy](SECURITY.md)
 
@@ -48,7 +48,7 @@ Visit the official **[writehawk Interactive Product Guide](https://biossystem.gi
 
 ```bash
 # Install latest release wheel:
-pip install https://github.com/BiosSystem/writehawk/releases/download/v0.2.0/writehawk-0.2.0-py3-none-any.whl
+pip install https://github.com/BiosSystem/writehawk/releases/download/v0.2.1/writehawk-0.2.1-py3-none-any.whl
 
 # Run a non-elevated diagnostic scan
 writehawk scan
@@ -183,7 +183,7 @@ Then remove `%ProgramData%\writehawk`.
 | Area | Tested | Not tested yet |
 |---|---|---|
 | Windows | Windows 11 desktop; Windows Server 2022 and 2025 on every change (Server 2022 shares its core with Windows 10) | A Windows 10 PC |
-| Linux & NAS | Test suite and main commands inside a Linux container | A real NAS: UGOS, DSM, TrueNAS, Unraid |
+| Linux & NAS | Test suite, and the installed package's scan and selftest, inside a Linux container | A real NAS: UGOS, DSM, TrueNAS, Unraid |
 | NVIDIA and AMD bugs | A replay of each bug's write pattern at the real file paths | A machine with the live bug |
 | Applying and undoing a fix | Byte for byte on a test registry key and service in a throwaway Windows | NVIDIA's or AMD's own service |
 

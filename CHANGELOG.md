@@ -3,6 +3,16 @@
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 Versions follow [Semantic Versioning](https://semver.org/).
 
+## [0.2.1] - 2026-11-24
+
+### Fixed
+
+- Linux and NAS scans no longer speak of graphics drivers. Each Linux rule says
+  whether its recommended setting is in place, names what it looked for when that
+  is absent ("no Btrfs volume on this machine"), and the summary tells you to
+  apply the setting instead of updating a graphics driver. A scan on Linux also
+  shows which storage setup it found. Windows output is unchanged.
+
 ## [0.2.0] - 2026-11-22
 
 ### Added
