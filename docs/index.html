@@ -847,7 +847,7 @@
   <div class="wrap hero-grid">
     <div>
       <div class="badge-row">
-        <div class="pill highlight"><span class="dot"></span> Release v0.2.0 Live</div>
+        <div class="pill highlight"><span class="dot"></span> Release v0.2.1 Live</div>
         <div class="pill">Windows 10 / 11</div>
         <div class="pill">Linux &amp; NAS (preview)</div>
         <a class="pill" href="#limits" style="text-decoration:none">What is tested &rarr;</a>
@@ -881,9 +881,10 @@
           <span class="d-yellow"></span>
           <span class="d-green"></span>
         </div>
-        <div class="term-title">Real writehawk 0.2.0 output (sources omitted)</div>
+        <div class="term-title">Real writehawk 0.2.1 output (sources omitted)</div>
         <div class="term-tabs">
           <button class="term-btn active" id="btn-scen-nvidia" onclick="runScenario('nvidia')">Affected driver</button>
+          <button class="term-btn" id="btn-scen-nas" onclick="runScenario('nas')">NAS settings</button>
           <button class="term-btn" id="btn-scen-clean" onclick="runScenario('clean')">Fixed driver</button>
         </div>
       </div>
@@ -1135,7 +1136,7 @@ unknown rewrite loops: not checked, the file trace needs an elevated terminal
         </div>
         <p style="font-size: 14px; margin-bottom: 8px;">Open Windows Terminal (PowerShell) or your Linux shell and paste:</p>
         <div class="copy-strip">
-          <span id="cmd-install">pip install https://github.com/BiosSystem/writehawk/releases/download/v0.2.0/writehawk-0.2.0-py3-none-any.whl</span>
+          <span id="cmd-install">pip install https://github.com/BiosSystem/writehawk/releases/download/v0.2.1/writehawk-0.2.1-py3-none-any.whl</span>
           <button class="copy-btn" onclick="copyText('cmd-install')">Copy</button>
         </div>
       </div>
@@ -1429,7 +1430,7 @@ unknown rewrite loops: not checked, the file trace needs an elevated terminal
           </tr>
           <tr>
             <td><strong>Linux &amp; NAS</strong></td>
-            <td>The test suite and the main commands inside a Linux container</td>
+            <td>The test suite, and the installed package's scan and selftest, inside a Linux container</td>
             <td>A real NAS: UGOS, DSM, TrueNAS and Unraid have not run it</td>
           </tr>
           <tr>
@@ -1471,11 +1472,11 @@ unknown rewrite loops: not checked, the file trace needs an elevated terminal
       </p>
     </div>
     <div>
-      <h4>Downloads (v0.2.0)</h4>
+      <h4>Downloads (v0.2.1)</h4>
       <ul>
-        <li><a href="https://github.com/BiosSystem/writehawk/releases/download/v0.2.0/writehawk-0.2.0-py3-none-any.whl">Python Wheel (.whl)</a></li>
-        <li><a href="https://github.com/BiosSystem/writehawk/releases/download/v0.2.0/writehawk-0.2.0.tar.gz">Source Tarball (.tar.gz)</a></li>
-        <li><a href="https://github.com/BiosSystem/writehawk/releases/download/v0.2.0/writehawk-v0.2.0-bundle.zip">Offline Bundle (.zip)</a></li>
+        <li><a href="https://github.com/BiosSystem/writehawk/releases/download/v0.2.1/writehawk-0.2.1-py3-none-any.whl">Python Wheel (.whl)</a></li>
+        <li><a href="https://github.com/BiosSystem/writehawk/releases/download/v0.2.1/writehawk-0.2.1.tar.gz">Source Tarball (.tar.gz)</a></li>
+        <li><a href="https://github.com/BiosSystem/writehawk/releases/download/v0.2.1/writehawk-v0.2.1-bundle.zip">Offline Bundle (.zip)</a></li>
       </ul>
     </div>
     <div>
@@ -1521,6 +1522,41 @@ unknown rewrite loops: not checked, the file trace needs an elevated terminal
 unknown rewrite loops: not checked, the file trace needs an elevated terminal
 
 <span class="t-hot">Summary:</span> your graphics driver has 1 known problem. Update it to the version named above.`,
+
+    nas: `<span class="t-dim">&gt;</span> <span class="t-cmd">sudo writehawk scan</span>
+<span class="t-dim">Looking at the graphics cards ... 0 found</span>
+<span class="t-dim">Looking at the storage setup ... btrfs, docker</span>
+<span class="t-dim">Watching for disk writes</span>  <span class="prog-bar"><b></b></span>  <span class="t-ok">done</span>
+<span class="t-dim">Checking 4 known problems ... done</span>
+
+<span class="t-hot">linux-btrfs-sqlite-nocow:</span> <span class="t-badge active">ACTIVE</span>
+  Btrfs copy-on-write on database folders amplifies small SQLite and WAL writes
+  Btrfs Storage Pool: recommended setting not in place
+  note: Setting the Btrfs NOCOW attribute (chattr +C) on database directories or mounting with nodatacow prevents extent fragmentation on random overwrites.
+  changed on disk during the scan: /volume1/docker/app/state.db-wal
+  workaround: available. Enables the writehawk Btrfs NOCOW policy marker so database state directories opt out of copy-on-write amplification.
+  why it is not set already:
+    - Btrfs enables copy-on-write by default on all newly created directories unless explicitly marked with chattr +C.
+
+<span class="t-hot">linux-docker-json-log-limit:</span> <span class="t-badge exposed">EXPOSED</span>
+  Docker container JSON logs have no max-size cap, causing continuous SSD write churn
+  Docker Engine / Container Manager: recommended setting not in place
+  note: Configuring log-opts max-size and max-file in /etc/docker/daemon.json caps per-container log disk consumption.
+  workaround: available. Configures /etc/docker/daemon.json with json-file log rotation capped at 10m (max 3 files).
+  why it is not set already:
+    - Docker Engine leaves log rotation unconfigured in default installations to preserve backward compatibility.
+
+<span class="t-hot">linux-journald-flash-cap:</span> <span class="t-badge fixed">NOT APPLICABLE</span>
+  systemd-journald writes and fsyncs persistent logs to flash without an explicit cap
+  no systemd journal on this machine
+
+<span class="t-hot">linux-ssd-swappiness:</span> <span class="t-badge fixed">NOT APPLICABLE</span>
+  High kernel vm.swappiness pages idle container and service memory to SSD swap
+  no readable swap setting on this machine
+
+unknown rewrite loops: not checked, the file trace needs an elevated terminal
+
+<span class="t-hot">Summary:</span> 1 known problem writing to your drive right now. Apply the setting named above; writehawk fix &lt;rule&gt; shows the change before making it.`,
 
     clean: `<span class="t-dim">&gt;</span> <span class="t-cmd">writehawk scan</span>
 <span class="t-dim">Looking at the graphics cards ... 1 found</span>
@@ -1700,11 +1736,11 @@ Undo with: writehawk rollback 20261122-120000-nvidia-nvtopps-log-rewrite --apply
       snippet: "writehawk selftest",
       output: `<span class="t-dim">&gt;</span> <span class="t-cmd">writehawk selftest</span>
 <span class="t-dim">Checking each part of writehawk on this machine ... done</span>
-writehawk 0.2.0, Windows 11 build 10.0.26300, Python 3.12.10 64-bit
+writehawk 0.2.1, Windows 11 build 10.0.26300, Python 3.12.10 64-bit
 
-PASS  process list: 532 processes listed
+PASS  process list: 548 processes listed
 PASS  process write counters: read for this process
-PASS  volume write counters: C: has 894489 writes counted since boot
+PASS  volume write counters: C: has 2109766 writes counted since boot
 PASS  graphics cards and drivers: 1 found (nvidia)
 PASS  active displays: 2 active
 PASS  volumes and media type: 6 listed, media: hdd, ssd, unknown
