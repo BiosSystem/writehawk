@@ -10,7 +10,7 @@ body:
         Run this in a terminal and paste everything it prints below:
 
         ```
-        writehawk selftest
+        python -m writehawk selftest
         ```
 
         For the two trace checks, run it once more from a terminal opened with **Run as administrator** (Windows) or with `sudo` (Linux and NAS), and paste that too.

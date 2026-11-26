@@ -1,4 +1,4 @@
-name: Public Showcase CI
+name: Check
 
 on:
   push:
@@ -14,18 +14,35 @@ permissions:
   contents: read
 
 jobs:
-  validate-showcase:
-    name: Validate Showcase & Documentation
+  files:
+    name: Files and wording
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
 
-      - name: Verify Documentation & Web Assets
+      - name: Required files are present
         run: |
-          test -f README.md
-          test -f CHANGELOG.md
-          test -f LICENSE
-          test -f SECURITY.md
-          test -f docs/index.html
-          test -f docs/og.png
-          echo "All showcase assets and documentation files present."
+          for f in README.md CHANGELOG.md LICENSE SECURITY.md docs/index.html docs/og.png; do
+            test -f "$f" || { echo "missing: $f"; exit 1; }
+          done
+
+      - name: No dashes or filler words in published text
+        env:
+          LC_ALL: C.UTF-8
+        run: |
+          files=$(git ls-files '*.md' '*.html' '.github/ISSUE_TEMPLATE/*.yml')
+          if grep -n -P '\x{2014}|\x{2013}' $files; then
+            echo "em or en dash found"; exit 1
+          fi
+          if grep -n -i -w -E 'robust|seamless|seamlessly|comprehensive|meticulous|meticulously|streamline|streamlined|leverage|empower|cutting-edge' $files; then
+            echo "filler word found"; exit 1
+          fi
+
+      - name: Download links name one version
+        run: |
+          versions=$(grep -h -o -E 'releases/download/v[0-9]+\.[0-9]+\.[0-9]+' README.md docs/index.html | sort -u)
+          echo "$versions"
+          test "$(echo "$versions" | wc -l)" -eq 1
