@@ -3,6 +3,24 @@
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 Versions follow [Semantic Versioning](https://semver.org/).
 
+## [0.2.4] - 2026-11-26
+
+Found by the first run on a real NAS (UGREEN, UGOS Pro).
+
+### Fixed
+
+- A Linux setting rule no longer reads ACTIVE when its recommended setting is
+  in place. With the system journal already capped, writehawk saw the journal
+  being written (it always is), reported ACTIVE and asked for a setting that
+  was already applied. It now reads FIXED, still lists the writes, and says
+  they are expected.
+- `selftest` on Linux called a system program "signed by Microsoft Windows"
+  and asked for "an administrator terminal". It now says the program is a
+  root-owned system binary and that the trace checks need root (sudo).
+- The Linux and NAS steps used `python3 -m venv` and `pip`, which UGOS does not
+  have. writehawk now runs straight from the downloaded file, with nothing to
+  install.
+
 ## [0.2.3] - 2026-11-26
 
 ### Fixed

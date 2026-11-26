@@ -7,7 +7,7 @@
 Made by [BiosSystem](https://github.com/BiosSystem)
 
 [Project page](https://biossystem.github.io/writehawk/) ·
-[Download 0.2.3](https://github.com/BiosSystem/writehawk/releases/tag/v0.2.3) ·
+[Download 0.2.4](https://github.com/BiosSystem/writehawk/releases/tag/v0.2.4) ·
 [Changelog](CHANGELOG.md) ·
 [Security](SECURITY.md)
 
@@ -35,7 +35,7 @@ guide for people who have never used a command line.
 2. Open PowerShell and install writehawk:
 
    ```powershell
-   python -m pip install https://github.com/BiosSystem/writehawk/releases/download/v0.2.3/writehawk-0.2.3-py3-none-any.whl
+   python -m pip install https://github.com/BiosSystem/writehawk/releases/download/v0.2.4/writehawk-0.2.4-py3-none-any.whl
    ```
 
 3. Run the check. It watches for about 20 seconds and changes nothing:
@@ -48,19 +48,19 @@ Run the same command in a PowerShell opened as administrator for the full
 check: writehawk then also watches every file write and lists any file that
 keeps being rewritten.
 
-On Linux or a NAS:
+On Linux or a NAS, writehawk runs straight from the downloaded file, with
+nothing to install. This also works where `pip` is missing, as on UGREEN UGOS.
+The last line is the full check as root:
 
 ```sh
-python3 -m venv ~/writehawk
-~/writehawk/bin/pip install https://github.com/BiosSystem/writehawk/releases/download/v0.2.3/writehawk-0.2.3-py3-none-any.whl
-sudo ~/writehawk/bin/writehawk scan
+curl -LO https://github.com/BiosSystem/writehawk/releases/download/v0.2.4/writehawk-0.2.4-py3-none-any.whl
+PYTHONPATH=$PWD/writehawk-0.2.4-py3-none-any.whl python3 -m writehawk scan
+sudo env PYTHONPATH=$PWD/writehawk-0.2.4-py3-none-any.whl python3 -m writehawk scan
 ```
-
-If `python3 -m venv` is missing, install your system's `python3-venv` package.
 
 ## Example
 
-Output of writehawk 0.2.3 for a PC with the affected NVIDIA driver (the
+Output of writehawk 0.2.4 for a PC with the affected NVIDIA driver (the
 graphics card is an example, source links are left out):
 
 ```text
@@ -153,9 +153,9 @@ report, then `python -m pip uninstall writehawk`. Delete
 | Area | Tested | Not tested yet |
 |---|---|---|
 | Windows | A Windows 11 PC. The full test suite as administrator in Windows Sandbox (a throwaway Windows 11). Versions before 0.1.0 also ran the suite on Windows Server 2022 and 2025; Server 2022 shares its core with Windows 10 | A Windows 10 PC |
-| Linux and NAS | The test suite and the installed program in Linux containers. The Docker and journald fixes applied and undone against the real services in containers | A real NAS (UGOS, DSM, TrueNAS, Unraid), a Btrfs volume, applying the swap setting |
-| NVIDIA and AMD problems | A replay of each problem's write pattern at the real file locations | A PC with the live problem |
-| Making and undoing a change | Byte for byte on a test registry key and a test service in Windows Sandbox | NVIDIA's or AMD's own service |
+| Linux and NAS | A UGREEN NAS with UGOS Pro as a standard user: every rule read the NAS as it is set up. The test suite and the program in Linux containers; the Docker and journald fixes applied and undone against the real services in containers | The full check as root on a NAS; DSM, TrueNAS, Unraid; a Btrfs volume; applying the swap setting |
+| NVIDIA and AMD problems | A replay of each problem's write pattern at the real file locations. A PC with the affected NVIDIA driver and its workaround off for three minutes: the loop did not start, writehawk read EXPOSED | Catching either loop while it runs |
+| Making and undoing a change | Byte for byte on a test registry key and a test service in Windows Sandbox, and the NVIDIA workaround on NVIDIA's own service on a PC with the affected driver | AMD's own service |
 
 On Windows 10, Linux or a NAS? Run `writehawk selftest` and
 [share what it prints](https://github.com/BiosSystem/writehawk/issues/new?template=test-report.yml).
