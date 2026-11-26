@@ -297,7 +297,7 @@
   <div class="wrap">
     <div>
       <div class="eyebrow">
-        <span class="tag new">Version 0.2.3</span>
+        <span class="tag new">Version 0.2.4</span>
         <span class="tag">Free and open source</span>
         <span class="tag">Windows 10 and 11</span>
         <span class="tag">Linux and NAS (preview)</span>
@@ -321,7 +321,7 @@
     </div>
     <div>
       <div class="out tall" role="region" aria-label="Example result">
-        <div class="out-head"><i></i><i></i><i></i><b>writehawk 0.2.3 output for an affected NVIDIA driver</b><button type="button" class="replay" id="hero-replay" hidden>Replay</button></div>
+        <div class="out-head"><i></i><i></i><i></i><b>writehawk 0.2.4 output for an affected NVIDIA driver</b><button type="button" class="replay" id="hero-replay" hidden>Replay</button></div>
         <pre id="hero-out"><span class="t-dim">&gt;</span> <span class="t-cmd">python -m writehawk scan</span>
 <span class="t-dim">Looking at the graphics cards ... 1 found</span>
 <span class="t-dim">Watching for disk writes</span>  ████████████████████████  <span class="t-ok">done</span>
@@ -427,7 +427,7 @@ unknown rewrite loops: not checked, the file trace needs an elevated terminal
         <div>
           <h3>Install writehawk</h3>
           <p>Click <b>Copy</b>, click inside the PowerShell window, press <kbd>Ctrl</kbd>+<kbd>V</kbd> to paste, and press <kbd>Enter</kbd>.</p>
-          <div class="copy"><code id="cmd-install">python -m pip install https://github.com/BiosSystem/writehawk/releases/download/v0.2.3/writehawk-0.2.3-py3-none-any.whl</code><button type="button" data-copy="cmd-install">Copy</button></div>
+          <div class="copy"><code id="cmd-install">python -m pip install https://github.com/BiosSystem/writehawk/releases/download/v0.2.4/writehawk-0.2.4-py3-none-any.whl</code><button type="button" data-copy="cmd-install">Copy</button></div>
           <p class="small">This downloads writehawk from its GitHub release page. It takes a few seconds.</p>
         </div>
       </li>
@@ -447,11 +447,11 @@ unknown rewrite loops: not checked, the file trace needs an elevated terminal
     <details class="more" style="margin-top: 22px;">
       <summary>Linux or a NAS (preview)</summary>
       <div class="body">
-        <p>You need Python 3.11 or newer and a terminal (on a NAS, usually through SSH). These commands install writehawk into its own folder in your home directory and run the full check:</p>
-        <div class="copy"><code id="cmd-linux">python3 -m venv ~/writehawk
-~/writehawk/bin/pip install https://github.com/BiosSystem/writehawk/releases/download/v0.2.3/writehawk-0.2.3-py3-none-any.whl
-sudo ~/writehawk/bin/writehawk scan</code><button type="button" data-copy="cmd-linux">Copy</button></div>
-        <p class="small">If <code>python3 -m venv</code> reports that venv is missing, install your system's <code>python3-venv</code> package first. The Linux and NAS checks have run in Linux containers but not yet on a real NAS.</p>
+        <p>You need Python 3.11 or newer and a terminal (on a NAS, usually through SSH). Nothing has to be installed: writehawk runs straight from the downloaded file, which also works on systems without <code>pip</code>, such as UGREEN UGOS. These commands download it and run the check; the last line is the full check as root:</p>
+        <div class="copy"><code id="cmd-linux">curl -LO https://github.com/BiosSystem/writehawk/releases/download/v0.2.4/writehawk-0.2.4-py3-none-any.whl
+PYTHONPATH=$PWD/writehawk-0.2.4-py3-none-any.whl python3 -m writehawk scan
+sudo env PYTHONPATH=$PWD/writehawk-0.2.4-py3-none-any.whl python3 -m writehawk scan</code><button type="button" data-copy="cmd-linux">Copy</button></div>
+        <p class="small">Tested on a UGREEN NAS with UGOS Pro and in Linux containers. Other NAS systems have not run it yet.</p>
       </div>
     </details>
   </div>
@@ -529,18 +529,18 @@ sudo ~/writehawk/bin/writehawk scan</code><button type="button" data-copy="cmd-l
         </tr>
         <tr>
           <td>Linux and NAS</td>
-          <td data-label="Tested">The test suite and the installed program, in Linux containers. The Docker and system log fixes, applied and undone against the real services in containers.</td>
-          <td data-label="Not tested yet">A real NAS (UGOS, DSM, TrueNAS, Unraid), a Btrfs volume, and applying the swap setting</td>
+          <td data-label="Tested">A UGREEN NAS with UGOS Pro, as a standard user: every rule read the NAS as it is set up. The test suite and the program in Linux containers, and the Docker and system log fixes applied and undone against the real services in containers.</td>
+          <td data-label="Not tested yet">The full check as root on a NAS; DSM, TrueNAS and Unraid; a Btrfs volume; applying the swap setting</td>
         </tr>
         <tr>
           <td>The NVIDIA and AMD problems</td>
-          <td data-label="Tested">A replay of each problem's write pattern at the real file locations</td>
-          <td data-label="Not tested yet">A PC that has the live problem</td>
+          <td data-label="Tested">A replay of each problem's write pattern at the real file locations. A PC with the affected NVIDIA driver, with its workaround switched off for three minutes: the loop did not start in that time, and writehawk read EXPOSED</td>
+          <td data-label="Not tested yet">Catching either loop while it runs</td>
         </tr>
         <tr>
           <td>Making and undoing a change</td>
-          <td data-label="Tested">Byte for byte on a test registry key and a test service in Windows Sandbox</td>
-          <td data-label="Not tested yet">NVIDIA's or AMD's own service</td>
+          <td data-label="Tested">Byte for byte on a test registry key and a test service in Windows Sandbox, and the NVIDIA workaround on NVIDIA's own service on a PC with the affected driver</td>
+          <td data-label="Not tested yet">AMD's own service</td>
         </tr>
       </tbody>
     </table>
@@ -554,7 +554,7 @@ sudo ~/writehawk/bin/writehawk scan</code><button type="button" data-copy="cmd-l
   <div class="wrap">
     <div class="kicker">For technical readers</div>
     <h2>Details</h2>
-    <p class="intro">Commands, sample output and how the measurement works. None of this is needed for the check above. Every sample is printed by the real 0.2.3 program; the hardware, drivers and files in it are examples.</p>
+    <p class="intro">Commands, sample output and how the measurement works. None of this is needed for the check above. Every sample is printed by the real 0.2.4 program; the hardware, drivers and files in it are examples.</p>
 
     <details class="more">
       <summary>All commands</summary>
@@ -722,11 +722,11 @@ ratio = bytes written / distinct bytes covered; flushed = cache writes to the fi
       <p style="margin-top: 12px;">Made by <a href="https://github.com/BiosSystem">BiosSystem</a>. Free software under the MIT license. Not affiliated with NVIDIA, AMD or Microsoft.</p>
     </div>
     <div>
-      <h4>Download 0.2.3</h4>
+      <h4>Download 0.2.4</h4>
       <ul>
-        <li><a href="https://github.com/BiosSystem/writehawk/releases/download/v0.2.3/writehawk-0.2.3-py3-none-any.whl">Program (.whl)</a></li>
-        <li><a href="https://github.com/BiosSystem/writehawk/releases/download/v0.2.3/writehawk-0.2.3.tar.gz">Source code (.tar.gz)</a></li>
-        <li><a href="https://github.com/BiosSystem/writehawk/releases/download/v0.2.3/writehawk-v0.2.3-bundle.zip">Offline bundle (.zip)</a></li>
+        <li><a href="https://github.com/BiosSystem/writehawk/releases/download/v0.2.4/writehawk-0.2.4-py3-none-any.whl">Program (.whl)</a></li>
+        <li><a href="https://github.com/BiosSystem/writehawk/releases/download/v0.2.4/writehawk-0.2.4.tar.gz">Source code (.tar.gz)</a></li>
+        <li><a href="https://github.com/BiosSystem/writehawk/releases/download/v0.2.4/writehawk-v0.2.4-bundle.zip">Offline bundle (.zip)</a></li>
       </ul>
     </div>
     <div>
