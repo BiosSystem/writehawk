@@ -6,6 +6,7 @@
 <title>writehawk: find what is wearing out your SSD</title>
 <meta name="description" content="A free check that finds programs which keep rewriting the same file and wear out your SSD. It explains known driver problems and tells you what to do. Windows 10 and 11, with Linux and NAS as a preview.">
 <meta name="theme-color" content="#e8590c">
+<meta name="author" content="BiosSystem">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="writehawk">
 <meta property="og:title" content="writehawk: find what is wearing out your SSD">
@@ -143,7 +144,11 @@
   .out-head i { width: 10px; height: 10px; border-radius: 50%; background: #3a3f4b; display: inline-block; }
   .out-head b { font-weight: 600; margin-left: 6px; }
   .out pre { margin: 0; padding: 16px 18px; font: 13px/1.55 var(--mono); white-space: pre-wrap; overflow-wrap: anywhere; }
-  .out.tall pre { max-height: 430px; overflow: auto; }
+  .out.tall pre { height: 430px; overflow: auto; }
+  .replay { margin-left: auto; border: 1px solid #343a46; background: #1d212a; color: #e7e9ee; font: 600 .78rem var(--font); border-radius: 7px; padding: 3px 10px; cursor: pointer; }
+  .replay:hover { background: #2a2f3a; }
+  .byline { margin: 14px 0 0; font-size: .95rem; color: var(--ink-3); }
+  .byline a { font-weight: 650; }
   .plainly { margin-top: 14px; font-size: .95rem; color: var(--ink-2); background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; }
   .plainly b { color: var(--ink); }
   .t-dim { color: var(--code-dim); }
@@ -250,6 +255,7 @@
     .nav { gap: 14px; }
     .nav a.hide-xs { display: none; }
     .btn { width: 100%; }
+    .out.tall pre { height: 380px; }
     .table thead { display: none; }
     .table, .table tbody, .table tr, .table td { display: block; width: 100%; }
     .table tr { border-bottom: 1px solid var(--line); padding: 6px 0; }
@@ -311,13 +317,14 @@
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
         <span>The check takes about 20 seconds, changes nothing on your computer and sends nothing over the internet.</span>
       </p>
+      <p class="byline">Made by <a href="https://github.com/BiosSystem">BiosSystem</a></p>
     </div>
     <div>
       <div class="out tall" role="region" aria-label="Example result">
-        <div class="out-head"><i></i><i></i><i></i><b>writehawk 0.2.3 output for an affected NVIDIA driver</b></div>
-        <pre><span class="t-dim">&gt;</span> <span class="t-cmd">python -m writehawk scan</span>
+        <div class="out-head"><i></i><i></i><i></i><b>writehawk 0.2.3 output for an affected NVIDIA driver</b><button type="button" class="replay" id="hero-replay" hidden>Replay</button></div>
+        <pre id="hero-out"><span class="t-dim">&gt;</span> <span class="t-cmd">python -m writehawk scan</span>
 <span class="t-dim">Looking at the graphics cards ... 1 found</span>
-<span class="t-dim">Watching for disk writes</span>  <span class="prog-bar"><b></b></span>  <span class="t-ok">done</span>
+<span class="t-dim">Watching for disk writes</span>  ████████████████████████  <span class="t-ok">done</span>
 <span class="t-dim">Checking 2 known problems ... done</span>
 
 <span class="t-hot">nvidia-nvtopps-log-rewrite:</span> <span class="t-badge exposed">EXPOSED</span>
@@ -336,7 +343,7 @@ unknown rewrite loops: not checked, the file trace needs an elevated terminal
 
 <span class="t-hot">Summary:</span> your graphics driver has 1 known problem. Update it to the version named above.</pre>
       </div>
-      <p class="plainly"><b>In plain words:</b> this PC has an NVIDIA driver with a known bug that keeps rewriting a log file. Installing NVIDIA driver 621.35 fixes it.<br><span style="color: var(--ink-3); font-size: .88rem;">Printed by the real program; the graphics card in it is an example.</span></p>
+      <p class="plainly"><b>In plain words:</b> this PC has an NVIDIA driver with a known bug that keeps rewriting a log file. Installing NVIDIA driver 621.35 fixes it.<br><span style="color: var(--ink-3); font-size: .88rem;">Printed by the real program; the graphics card in it is an example. The 20 second watch is sped up.</span></p>
     </div>
   </div>
 </div>
@@ -712,7 +719,7 @@ ratio = bytes written / distinct bytes covered; flushed = cache writes to the fi
         </svg>
         <span class="name">write<span>hawk</span></span>
       </a>
-      <p style="margin-top: 12px;">Free software under the MIT license. Not affiliated with NVIDIA, AMD or Microsoft.</p>
+      <p style="margin-top: 12px;">Made by <a href="https://github.com/BiosSystem">BiosSystem</a>. Free software under the MIT license. Not affiliated with NVIDIA, AMD or Microsoft.</p>
     </div>
     <div>
       <h4>Download 0.2.3</h4>
@@ -743,6 +750,72 @@ ratio = bytes written / distinct bytes covered; flushed = cache writes to the fi
 </footer>
 
 <script>
+  // Replays the example the way writehawk prints it in a terminal: each step
+  // appears with "...", then its result; the watch draws the same 24 character
+  // bar and countdown as the program, sped up from 20 seconds to about 4.
+  (function () {
+    var pre = document.getElementById("hero-out");
+    var replay = document.getElementById("hero-replay");
+    if (!pre || !replay || !window.matchMedia) { return; }
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) { return; }
+    var lines = pre.innerHTML.split("\n");
+    var stepLine = /^<span class="t-dim">(.*) \.\.\. (.*)<\/span>$/;
+    var watchLine = /^<span class="t-dim">(.*)<\/span>  (█+)  <span class="t-ok">done<\/span>$/;
+    var WATCH = 20, FRAME = 200;
+    var run = 0;
+    function wait(ms, id) {
+      return new Promise(function (resolve, reject) {
+        setTimeout(function () { (id === run) ? resolve() : reject(); }, ms);
+      });
+    }
+    function bar(label, left, width) {
+      var filled = Math.round(width * (WATCH - left) / WATCH);
+      var text = "█".repeat(filled) + "░".repeat(width - filled);
+      var secs = String(left);
+      while (secs.length < 3) { secs = " " + secs; }
+      return '<span class="t-dim">' + label + "</span>  " + text + "  " + secs + " s left";
+    }
+    async function play() {
+      var id = ++run;
+      var shown = [];
+      function draw(extra) {
+        pre.innerHTML = shown.concat(extra === undefined ? [] : [extra]).join("\n");
+        pre.scrollTop = pre.scrollHeight;
+      }
+      try {
+        draw();
+        for (var i = 0; i < lines.length; i++) {
+          var line = lines[i];
+          var step = stepLine.exec(line);
+          var watch = watchLine.exec(line);
+          if (i === 0) {
+            draw(line);
+            await wait(700, id);
+          } else if (watch) {
+            for (var left = WATCH; left > 0; left--) {
+              draw(bar(watch[1], left, watch[2].length));
+              await wait(FRAME, id);
+            }
+          } else if (step) {
+            draw('<span class="t-dim">' + step[1] + " ...</span>");
+            await wait(450, id);
+          } else {
+            await wait(line ? 45 : 120, id);
+          }
+          shown.push(line);
+          draw();
+        }
+        pre.scrollTop = 0;
+      } catch (stopped) {
+        // A newer replay took over.
+      }
+    }
+    pre.style.minHeight = pre.offsetHeight + "px";
+    replay.hidden = false;
+    replay.addEventListener("click", play);
+    play();
+  })();
+
   document.querySelectorAll("button[data-copy]").forEach(function (button) {
     button.addEventListener("click", function () {
       var code = document.getElementById(button.getAttribute("data-copy"));

@@ -4,6 +4,8 @@
 
 **Finds programs that keep rewriting the same file and wear out your SSD, and tells you what to do.**
 
+Made by [BiosSystem](https://github.com/BiosSystem)
+
 [Project page](https://biossystem.github.io/writehawk/) ·
 [Download 0.2.3](https://github.com/BiosSystem/writehawk/releases/tag/v0.2.3) ·
 [Changelog](CHANGELOG.md) ·
